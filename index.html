@@ -54,7 +54,7 @@
       -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; overscroll-behavior:contain;
       transition: background .3s, color .3s;
     }
-    /* Safe area */
+    /* Safe area bars (notch) */
     body::before,body::after{content:"";position:fixed;left:0;right:0;z-index:9999;background:var(--bg1);pointer-events:none}
     body::before{top:0;height:env(safe-area-inset-top)} body::after{bottom:0;height:env(safe-area-inset-bottom)}
     @supports(padding: env(safe-area-inset-left)){
@@ -98,11 +98,23 @@
     .dba-values-row .kv-item b{display:block;color:var(--text);font-size:12px;margin-bottom:4px}
     input[type="range"], input[type="checkbox"]{accent-color:var(--accent-color)}
 
-    /* fullscreen fallback */
-    .card.is-fullscreen{position:fixed;inset:0;z-index:9999;margin:0;border-radius:0;width:100vw;height:100vh}
-    .card.is-fullscreen .plot{height:calc(100vh - 120px)}
-    :fullscreen .plot{height:calc(100vh - 120px)}
+    /* ===== Fullscreen (แก้ตกขอบขวา + ลดขอบล่างบนมือถือ) ===== */
+    .card.is-fullscreen{
+      position:fixed; inset:0; z-index:9999; margin:0; border-radius:0; width:100vw; height:100vh;
+      /* รองรับ safe-area ทั้งสี่ด้าน */
+      padding-left:calc(8px + env(safe-area-inset-left));
+      padding-right:calc(8px + env(safe-area-inset-right));
+      padding-top:calc(8px + env(safe-area-inset-top));
+      padding-bottom:calc(8px + env(safe-area-inset-bottom));
+    }
+    .card.is-fullscreen .plot{ height:calc(100vh - 88px - env(safe-area-inset-bottom)); margin-top:6px; }
+    :fullscreen .plot{ height:calc(100vh - 88px - env(safe-area-inset-bottom)); }
     :fullscreen canvas, .card.is-fullscreen canvas{height:100%!important}
+
+    /* มือถือแนวนอน – ให้กราฟกินพื้นที่มากขึ้น */
+    @media (orientation:landscape) and (max-width: 900px){
+      .card.is-fullscreen .plot{ height:calc(100vh - 64px - env(safe-area-inset-bottom)); }
+    }
   </style>
 </head>
 <body>
@@ -220,7 +232,7 @@
       <div class="card" id="heatmapCard">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
           <div class="row">
-            <!-- ลบชื่อ "Spectrogram" เพื่อไม่ให้ซ้อนในมือถือ -->
+            <!-- ตัดหัวข้อ text ออกเพื่อไม่ให้ซ้อนในมือถือ -->
             <button id="btnToggleHeatmap" class="ghost" aria-pressed="false">OFF</button>
             <button id="btnHeatmapQuality" class="ghost" aria-pressed="true">HD</button>
           </div>
@@ -237,7 +249,6 @@
               </select>
             </label>
             <span class="hint" id="heatmapRangeText">-50 dBFS</span>
-            <!-- ปุ่มขยายเฉพาะด้านขวา -->
             <button class="ghost icon-btn" id="fsHeat" title="Fullscreen">⛶</button>
           </div>
         </div>
@@ -306,7 +317,7 @@
           demo:{enabled:false,oscillators:[],noise:null,gain:null}
         };
 
-        // set default theme + colors before first draw
+        // ตั้งธีมเริ่มต้น + เตรียมสี
         document.documentElement.dataset.theme='studio-blue';
         this.updateColors();
 
@@ -427,7 +438,7 @@
           this.updateHeatmapRangeText();
         });
 
-        // fullscreen binds (เฉพาะด้านขวา)
+        // fullscreen (เฉพาะด้านขวา)
         this.setupFsToggle(this.dom.fsFFT,this.dom.fftCard);
         this.setupFsToggle(this.dom.fsOct,this.dom.octCard);
         this.setupFsToggle(this.dom.fsHeat,this.dom.heatmapCard);
@@ -454,6 +465,13 @@
         updateIcon();
       }
 
+      isFsActive(){
+        return !!(document.fullscreenElement
+          || this.dom.fftCard.classList.contains('is-fullscreen')
+          || this.dom.octCard.classList.contains('is-fullscreen')
+          || this.dom.heatmapCard.classList.contains('is-fullscreen'));
+      }
+
       setupCanvases(){
         this.canvases={
           fft:{canvas:this.dom.fftCanvas,ctx:this.dom.fftCanvas.getContext('2d'),tip:this.dom.fftTip},
@@ -468,12 +486,25 @@
       }
 
       handleResize(){
+        // ปรับ PAD อัตโนมัติเมื่อ fullscreen + มือถือแนวนอน
+        const mobileLandscape = window.innerWidth > window.innerHeight && window.innerWidth <= 900;
+        if(this.isFsActive() && mobileLandscape){
+          this.PAD.R = 16;         // กันตกขอบขวา
+          this.PAD.B = 20;         // ลดพื้นที่ล่างให้บาง
+          this.LABEL_Y = 6;        // ขยับตำแหน่งตัวเลข
+        }else{
+          this.PAD.R = 10;
+          this.PAD.B = 32;
+          this.LABEL_Y = 10;
+        }
+
         const dpr=window.devicePixelRatio||1;
         for(const k in this.canvases){
           const obj=this.canvases[k]; if(!obj||!obj.canvas) continue;
           const {canvas,ctx}=obj; const rect=canvas.getBoundingClientRect();
-          canvas.width=rect.width*dpr; canvas.height=rect.height*dpr;
-          if(ctx){ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr,dpr);}
+          canvas.width=Math.round(rect.width*dpr);
+          canvas.height=Math.round(rect.height*dpr);
+          if(ctx){ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr, dpr);}
         }
         this.drawInitialFrames();
         if(this.state.running){
