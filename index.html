@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" data-theme="dark-matter">
+<html lang="th" data-theme="studio-blue">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#1a202c" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Mobile RTA (Pro Refactor with Off-screen Canvas)</title>
+  <title>Mobile RTA (Pro Refactor)</title>
 
   <style>
     /* --- Theme: Dark Matter (Default) --- */
@@ -22,10 +22,9 @@
       --dba-meter-bg-yellow: #f6ad55;
       --dba-meter-bg-orange: #ed8936;
       --dba-meter-bg-red: #e53e3e;
-      --accent-color: #2DD4BF; /* Teal */
+      --accent-color: #2DD4BF;
     }
-
-    /* --- Theme: Studio Blue --- */
+    /* --- Theme: Studio Blue (ให้เป็นค่าเริ่มต้น) --- */
     [data-theme="studio-blue"] {
       --bg1:#0F172A; --bg2:#1E293B; --card:#1E293B; --text:#E2E8F0; --muted:#64748B;
       --gridH:rgba(255,255,255,.1); --gridV:rgba(255,255,255,.05);
@@ -37,9 +36,8 @@
       --dba-meter-bg-yellow: #A78BFA;
       --dba-meter-bg-orange: #EC4899;
       --dba-meter-bg-red: #F43F5E;
-      --accent-color: #60A5FA; /* Slate Blue */
+      --accent-color: #60A5FA;
     }
-
     /* --- Theme: Vintage Amber --- */
     [data-theme="vintage-amber"] {
       --bg1:#292524; --bg2:#1c1917; --card:#44403C; --text:#D6D3D1; --muted:#A8A29E;
@@ -52,7 +50,7 @@
       --dba-meter-bg-yellow: #FACC15;
       --dba-meter-bg-orange: #FB923C;
       --dba-meter-bg-red: #EF4444;
-      --accent-color: #D97706; /* Burnt Orange */
+      --accent-color: #D97706;
     }
 
     :root{ color-scheme:dark }
@@ -64,7 +62,6 @@
       -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; overscroll-behavior:contain;
       transition: background .3s, color .3s;
     }
-    /* Safe Area */
     body::before,body::after{content:"";position:fixed;left:0;right:0;z-index:9999;background:var(--bg1);pointer-events:none}
     body::before{top:0;height:env(safe-area-inset-top)} body::after{bottom:0;height:env(safe-area-inset-bottom)}
     @supports(padding: env(safe-area-inset-left)){
@@ -107,13 +104,13 @@
     
     input[type="range"], input[type="checkbox"] { accent-color: var(--accent-color); }
 
-    /* ====== Fullscreen (เฉพาะการ์ดที่เปิด) + Fallback class ====== */
+    /* ====== Fullscreen เฉพาะ Octave + Fallback class ====== */
     .card.is-fullscreen{
       position: fixed; inset: 0; z-index: 9999;
       margin: 0; border-radius: 0;
       width: 100vw; height: 100vh;
     }
-    .card.is-fullscreen .plot{ height: calc(100vh - 120px); } /* ปรับตามความสูงหัวการ์ด */
+    .card.is-fullscreen .plot{ height: calc(100vh - 120px); }
     :fullscreen .plot{ height: calc(100vh - 120px); }
     :fullscreen canvas, .card.is-fullscreen canvas{ height: 100% !important; }
   </style>
@@ -132,7 +129,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.0) 14/08/68 </h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.0) 14/08/68</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -159,7 +156,7 @@
         <label>Theme
           <select id="themeSelector">
             <option value="dark-matter">Dark Matter</option>
-            <option value="studio-blue">Studio Blue</option>
+            <option value="studio-blue" selected>Studio Blue</option>
             <option value="vintage-amber">Vintage Amber</option>
           </select>
         </label>
@@ -192,7 +189,7 @@
         </div>
       </div>
 
-      <!-- ====== RTA Octave (เพิ่มปุ่ม ⛶ และ id="octCard") ====== -->
+      <!-- Octave card (มีปุ่มขยาย/ย่อ) -->
       <div class="card" id="octCard">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
           <div class="row">
@@ -218,7 +215,6 @@
               </select>
             </label>
             <span class="hint" id="octRangeText">0–255</span>
-            <!-- ปุ่มขยาย/ย่อเต็มจอ -->
             <button class="ghost" id="fsOct" title="ขยาย/ย่อเต็มจอ">⛶ ขยาย</button>
           </div>
         </div>
@@ -227,7 +223,6 @@
           <div id="octTip" class="tip" style="display:none">—</div>
         </div>
       </div>
-      <!-- ====== /RTA Octave ====== -->
 
       <div class="card" id="heatmapCard">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
@@ -272,8 +267,8 @@
         </div>
         <div class="dba-values-row" style="margin-top:12px;">
           <div class="kv-item"><b>Realtime (dB)</b><span id="dbRealtimeValue">—</span></div>
-          <div class="kv-item"><b>AVG (ดB)</b><span id="dbAvgValue">—</span></div>
-          <div class="kv-item"><b>MAX (ดB)</b><span id="dbMaxValue">—</span></div>
+          <div class="kv-item"><b>AVG (dB)</b><span id="dbAvgValue">—</span></div>
+          <div class="kv-item"><b>MAX (dB)</b><span id="dbMaxValue">—</span></div>
         </div>
       </div>
     </div>
@@ -331,7 +326,7 @@
       }
 
       init() {
-        this.applyTheme('dark-matter');
+        this.applyTheme('studio-blue');   // เริ่มต้นด้วยธีม Blue
         this.setupEventListeners();
         this.setupCanvases();
         this.updateOctaveRangeText();
@@ -458,7 +453,7 @@
           this.updateHeatmapRangeText();
         });
 
-        /* ====== ปุ่มขยาย/ย่อเฉพาะ Octave ====== */
+        /* ปุ่มขยาย/ย่อ Octave */
         this.setupOctaveFullscreen();
         
         window.addEventListener('resize', () => this.handleResize());
@@ -502,14 +497,12 @@
         });
 
         document.addEventListener('fullscreenchange', () => {
-          // sync text when user exits with ESC
           updateBtnText();
           this.handleResize();
         });
 
         updateBtnText();
       }
-      /* ====== /Fullscreen ====== */
       
       setupCanvases() {
         this.canvases = {
@@ -780,6 +773,48 @@
         [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000].forEach(t => { const x = this.mapLogX(t, plotW); ctx.fillText(t >= 1000 ? (t / 1000) + 'k' : t, x - 8, plotH - this.LABEL_Y); });
       }
 
+      /* ===== เพิ่ม drawPeakLine ที่หายไป ===== */
+      drawPeakLine(ctx, x, wCss, hCss, color, dashed = false, labelText = null) {
+        const y0 = this.PAD.T, y1 = hCss - this.PAD.B;
+        ctx.save();
+        ctx.strokeStyle = color; ctx.lineWidth = 1;
+        if (dashed) ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+        ctx.restore();
+
+        if (!labelText) return;
+        ctx.save();
+        ctx.font = '12px system-ui';
+        const padX = 6, padY = 3;
+        const textW = ctx.measureText(labelText).width;
+        const boxW = textW + padX * 2, boxH = 18;
+        let bx = Math.round(x - boxW / 2);
+        const minX = this.PAD.L + 2, maxX = (wCss - this.PAD.R) - boxW - 2;
+        if (bx < minX) bx = minX; if (bx > maxX) bx = maxX;
+        const by = y0 + 2;
+        ctx.fillStyle = 'rgba(0,0,0,.55)';
+        ctx.strokeStyle = 'rgba(255,255,255,.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const r = 8;
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + boxW - r, by);
+        ctx.quadraticCurveTo(bx + boxW, by, bx + boxW, by + r);
+        ctx.lineTo(bx + boxW, by + boxH - r);
+        ctx.quadraticCurveTo(bx + boxW, by + boxH, bx + boxW - r, by + boxH);
+        ctx.lineTo(bx + r, by + boxH);
+        ctx.quadraticCurveTo(bx, by + boxH, bx, by + boxH - r);
+        ctx.lineTo(bx, by + r);
+        ctx.quadraticCurveTo(bx, by, bx + r, by);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = this.colors.label || '#e5e7eb';
+        ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+        ctx.fillText(labelText, bx + boxW / 2, by + boxH / 2 + 0.5);
+        ctx.restore();
+      }
+      /* ===== /drawPeakLine ===== */
+
       drawFFT() {
         const { ctx } = this.canvases.fft;
         const { width: w, height: h } = ctx.canvas;
@@ -816,14 +851,14 @@
         let holdBin = 0, holdVal = 0; 
         for (let i = 0; i < N; i++) if (this.state.peakArray[i] > holdVal) { holdVal = this.state.peakArray[i]; holdBin = i; }
         if (holdVal > 0) {
-          this.dom.fftHoldText.style.display = '';
           const holdHz = holdBin * fpb;
+          this.dom.fftHoldText.style.display = '';
           this.dom.fftHoldText.textContent = `Hold: ${this.fmtHz(holdHz)}`;
-          this.drawPeakLine(ctx, this.mapLogX(holdHz, plotW), plotH, this.colors.hold, true, this.fmtHz(holdHz));
+          this.drawPeakLine(ctx, this.mapLogX(holdHz, plotW), plotW, plotH, this.colors.hold, true, this.fmtHz(holdHz));
         } else {
           this.dom.fftHoldText.style.display = 'none';
         }
-        this.drawPeakLine(ctx, this.mapLogX(peakFreqNow, plotW), plotH, 'rgba(100,149,237,.6)');
+        this.drawPeakLine(ctx, this.mapLogX(peakFreqNow, plotW), plotW, plotH, 'rgba(100,149,237,.6)');
         if (this.state.guideFFT) this.drawGuide(ctx, this.state.guideFFT.xPx, plotH);
       }
 
@@ -869,14 +904,14 @@
         this.dom.octPeakText.textContent = `Peak: ${this.fmtHz(this.state.bands[idxNow].fc)}`;
 
         if (vHold > 0) {
-          this.dom.octHoldText.style.display = '';
           const holdHz = this.state.bands[idxHold].fc;
+          this.dom.octHoldText.style.display = '';
           this.dom.octHoldText.textContent = `Hold: ${this.fmtHz(holdHz)}`;
-          this.drawPeakLine(ctx, this.mapLogX(holdHz, plotW), plotH, this.colors.hold, true, this.fmtHz(holdHz));
+          this.drawPeakLine(ctx, this.mapLogX(holdHz, plotW), plotW, plotH, this.colors.hold, true, this.fmtHz(holdHz));
         } else {
           this.dom.octHoldText.style.display = 'none';
         }
-        this.drawPeakLine(ctx, this.mapLogX(this.state.bands[idxNow].fc, plotW), plotH, 'rgba(100,149,237,.6)');
+        this.drawPeakLine(ctx, this.mapLogX(this.state.bands[idxNow].fc, plotW), plotW, plotH, 'rgba(100,149,237,.6)');
         if (this.state.guideOCT) this.drawGuide(ctx, this.state.guideOCT.xPx, plotH);
       }
 
