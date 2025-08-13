@@ -103,6 +103,32 @@
     .card.is-fullscreen .plot{height:calc(100vh - 120px)}
     :fullscreen .plot{height:calc(100vh - 120px)}
     :fullscreen canvas, .card.is-fullscreen canvas{height:100%!important}
+
+    /* Floating command dock */
+    .float-dock{
+      position:fixed;
+      left:calc(8px + env(safe-area-inset-left));
+      top:50%;
+      transform:translateY(-50%);
+      display:flex; flex-direction:column; gap:10px;
+      z-index:10000;
+    }
+    .float-dock .fab{
+      width:44px; height:44px;
+      display:inline-flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px; color:#e5e7eb; font-size:20px;
+      box-shadow:0 10px 24px rgba(0,0,0,.25);
+      cursor:pointer;
+      transition:transform .08s ease, opacity .2s ease, background .2s ease;
+    }
+    .float-dock .fab:active{ transform:scale(.96); }
+    .float-dock .fab:disabled{ opacity:.55; cursor:not-allowed; }
+    .float-dock .fab[aria-pressed="true"]{ background:var(--accent-color); color:#fff; }
+    @media (max-width:480px){
+      .float-dock .fab{ width:40px; height:40px; font-size:18px; }
+    }
   </style>
 </head>
 <body>
@@ -119,7 +145,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.0) 14/08/68</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.5)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -220,7 +246,6 @@
       <div class="card" id="heatmapCard">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
           <div class="row">
-            <!-- ลบชื่อ "Spectrogram" เพื่อไม่ให้ซ้อนในมือถือ -->
             <button id="btnToggleHeatmap" class="ghost" aria-pressed="false">OFF</button>
             <button id="btnHeatmapQuality" class="ghost" aria-pressed="true">HD</button>
           </div>
@@ -237,7 +262,6 @@
               </select>
             </label>
             <span class="hint" id="heatmapRangeText">-50 dBFS</span>
-            <!-- ปุ่มขยายเฉพาะด้านขวา -->
             <button class="ghost icon-btn" id="fsHeat" title="Fullscreen">⛶</button>
           </div>
         </div>
@@ -273,8 +297,15 @@
       <div><b>ระดับ RMS (ดิบ dBFS)</b><span id="rms">—</span></div>
       <div><b>ความถี่พีคโดยประมาณ</b><span id="peak">—</span></div>
     </div>
+  </div>
 
-    <div class="card hint">ข้อจำกัด: ไมค์มือถือมี DSP/AGC และการตอบสนองความถี่ไม่แฟลต ใช้ดูแนว EQ ได้แต่ไม่ใช่มาตรวัด SPL มืออาชีพ</div>
+  <!-- Floating command dock (icon-only) -->
+  <div class="float-dock" aria-label="Quick controls">
+    <button id="fabStart" class="fab" title="เริ่มวัด">▶️</button>
+    <button id="fabStop"  class="fab" title="หยุด" disabled>⏸️</button>
+    <button id="fabHold"  class="fab" title="Hold Peak" aria-pressed="true">📌</button>
+    <button id="fabClear" class="fab" title="Clear Peak">♻️</button>
+    <button id="fabAwt"   class="fab" title="A-weighting" aria-pressed="false">👂</button>
   </div>
 
   <script>
@@ -306,7 +337,7 @@
           demo:{enabled:false,oscillators:[],noise:null,gain:null}
         };
 
-        // set default theme + colors before first draw
+        // default theme
         document.documentElement.dataset.theme='studio-blue';
         this.updateColors();
 
@@ -325,7 +356,8 @@
           'octHoldText','heatmapAthText','fftCanvas','octCanvas','heatmapCanvas','dbMeterCanvas',
           'fftTip','octTip','heatmapTip','dbRealtimeValue','dbAvgValue','dbMaxValue',
           'octTitle','octRes','octRangePreset','octRangeSlider','octRangeText','heatmapRangeSlider',
-          'heatmapRangePreset','heatmapRangeText','rms','peak','errBox','errMsg','fsOct','fsFFT','fsHeat'
+          'heatmapRangePreset','heatmapRangeText','rms','peak','errBox','errMsg','fsOct','fsFFT','fsHeat',
+          /* floating buttons */ 'fabStart','fabStop','fabHold','fabClear','fabAwt'
         ];
         const dom={}; ids.forEach(id=>dom[id]=document.getElementById(id));
         dom.fftCard=document.getElementById('fftCard');
@@ -341,6 +373,7 @@
       }
 
       setupEventListeners(){
+        // Header controls
         this.dom.btnStart.addEventListener('click',()=>this.start());
         this.dom.btnStartDemo.addEventListener('click',()=>this.startDemo());
         this.dom.btnStop.addEventListener('click',()=>this.stop());
@@ -351,12 +384,14 @@
           this.state.holdEnabled=!this.state.holdEnabled;
           this.dom.btnHold.setAttribute('aria-pressed',this.state.holdEnabled);
           this.dom.btnHold.textContent=`📌 Hold Peak: ${this.state.holdEnabled?'ON':'OFF'}`;
+          this.syncFloating();
         });
 
         this.dom.btnAweight.addEventListener('click',()=>{
           this.state.aWeightEnabled=!this.state.aWeightEnabled;
           this.dom.btnAweight.setAttribute('aria-pressed',this.state.aWeightEnabled);
           this.dom.btnAweight.textContent=`A-weighting: ${this.state.aWeightEnabled?'ON':'OFF'}`;
+          this.syncFloating();
         });
 
         this.dom.btnToggleHeatmap.addEventListener('click',()=>{
@@ -427,12 +462,27 @@
           this.updateHeatmapRangeText();
         });
 
-        // fullscreen binds (เฉพาะด้านขวา)
+        // fullscreen binds
         this.setupFsToggle(this.dom.fsFFT,this.dom.fftCard);
         this.setupFsToggle(this.dom.fsOct,this.dom.octCard);
         this.setupFsToggle(this.dom.fsHeat,this.dom.heatmapCard);
 
+        // Floating buttons map to the same actions
+        this.dom.fabStart.addEventListener('click',()=>this.dom.btnStart.click());
+        this.dom.fabStop .addEventListener('click',()=>this.dom.btnStop.click());
+        this.dom.fabClear.addEventListener('click',()=>this.dom.btnClear.click());
+        this.dom.fabHold .addEventListener('click',()=>this.dom.btnHold.click());
+        this.dom.fabAwt  .addEventListener('click',()=>this.dom.btnAweight.click());
+
         window.addEventListener('resize',()=>this.handleResize());
+      }
+
+      syncFloating(){
+        // reflect header states -> floating buttons
+        this.dom.fabStart.disabled = this.dom.btnStart.disabled;
+        this.dom.fabStop .disabled = this.dom.btnStop.disabled;
+        this.dom.fabHold.setAttribute('aria-pressed', this.state.holdEnabled);
+        this.dom.fabAwt .setAttribute('aria-pressed', this.state.aWeightEnabled);
       }
 
       setupFsToggle(btn,card){
@@ -491,6 +541,7 @@
 
       async start(){
         this.dom.btnStart.disabled=true;
+        this.syncFloating();
         try{
           if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
             throw new Error('เบราว์เซอร์ไม่รองรับ getUserMedia API');
@@ -505,13 +556,13 @@
           catch(e){
             if(e && (e.name==='NotAllowedError'||e.name==='SecurityError')){
               this.showError('เบราว์เซอร์ไม่อนุญาตใช้ไมโครโฟน (NotAllowed). ใช้ HTTPS และอนุญาตสิทธิ์ หรือใช้โหมดเดโม่');
-              this.dom.btnStart.disabled=false; return;
+              this.dom.btnStart.disabled=false; this.syncFloating(); return;
             }
             if(e && (e.name==='NotFoundError'||e.name==='OverconstrainedError')){
-              this.showError('ไม่พบอุปกรณ์ไมค์ที่ใช้งานได้'); this.dom.btnStart.disabled=false; return;
+              this.showError('ไม่พบอุปกรณ์ไมค์ที่ใช้งานได้'); this.dom.btnStart.disabled=false; this.syncFloating(); return;
             }
             try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
-            catch(e2){ this.showError(`เริ่มไมค์ไม่ได้: ${e2.message||e2}`); this.dom.btnStart.disabled=false; return; }
+            catch(e2){ this.showError(`เริ่มไมค์ไม่ได้: ${e2.message||e2}`); this.dom.btnStart.disabled=false; this.syncFloating(); return; }
           }
 
           const audioCtx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
@@ -526,9 +577,10 @@
           this.resetDbaValues();
           this.dom.errBox.style.display='none';
           this.dom.btnStop.disabled=false;
+          this.syncFloating();
           this.loop();
         }catch(err){
-          console.error(err); this.showError(err.message||String(err)); this.dom.btnStart.disabled=false;
+          console.error(err); this.showError(err.message||String(err)); this.dom.btnStart.disabled=false; this.syncFloating();
         }
       }
 
@@ -544,7 +596,7 @@
           const osc3=audioCtx.createOscillator(); osc3.type='sine'; osc3.frequency.value=5000;
 
           const nb=audioCtx.createBuffer(1,audioCtx.sampleRate,audioCtx.sampleRate);
-          const data=nb.getChannelData(0); for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*0.02;
+          const data=nb.getChannelData(0); for(let i=0;i<data.length;i++) data[i]=(Math.random() * 2 - 1) * 0.02;
           const noise=audioCtx.createBufferSource(); noise.buffer=nb; noise.loop=true;
 
           osc1.connect(gain); osc2.connect(gain); osc3.connect(gain); noise.connect(gain);
@@ -564,6 +616,7 @@
           this.resetDbaValues();
           this.dom.errBox.style.display='none';
           this.dom.btnStop.disabled=false;
+          this.syncFloating();
           this.loop(); mod();
         }catch(e){ this.showError('เริ่มโหมดเดโม่ไม่ได้: '+(e.message||e)); }
       }
@@ -580,6 +633,7 @@
         this.state.analyser?.disconnect(); try{this.state.audioCtx?.close();}catch{}
         this.state={...this.state,audioCtx:null,analyser:null,micSrc:null,stream:null,demo:{enabled:false,oscillators:[],noise:null,gain:null}};
         this.dom.btnStart.disabled=false; this.dom.btnStop.disabled=true;
+        this.syncFloating();
         this.dom.dbRealtimeValue.textContent='—'; this.updateDbMeter(-Infinity);
       }
 
