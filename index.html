@@ -243,6 +243,29 @@
     @media (max-width:480px){
       .float-dock .fab{ width:40px; height:40px; font-size:18px; }
     }
+  
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,.85);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font: 14px system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans';
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease;
+      z-index: 9999;
+      box-shadow: 0 6px 20px rgba(0,0,0,.35);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
   </style>
 </head>
 <body>
@@ -569,7 +592,7 @@
         return dom;
       }
       // --- Sleep/Resume helpers ---
-      enterSleep(reason='hidden'){
+      enterSleep(reason='hidden'){ this.showToast('Sleep mode: ปิดไมค์ + Heatmap');
         if(this._sleeping) return;
         this._sleeping = true;
         // remember states
@@ -585,7 +608,7 @@
         }
         if(this.state.running) this.stop();
       }
-      exitSleep(){
+      exitSleep(){ this.showToast('กลับมาใช้งาน: เปิดไมค์ต่อ');
         if(!this._sleeping) return;
         this._sleeping = false;
         if(this.state.wasRunningBeforeSleep && !this.state.running){
@@ -1357,7 +1380,23 @@
         document.documentElement.dataset.theme=themeName;
         setTimeout(()=>{ this.updateColors(); this.drawInitialFrames(); if(this.state.running){this.drawFFT(); this.drawOctave(); if(this.state.heatmapEnabled) this.drawHeatmap(true);} },0);
       }
-      updateColors(){
+      
+      // --- Toast helpers ---
+      ensureToast(){
+        if(this._toast) return this._toast;
+        this._toast = document.createElement('div');
+        this._toast.className = 'toast';
+        document.body.appendChild(this._toast);
+        return this._toast;
+      }
+      showToast(msg){
+        const el = this.ensureToast();
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(()=>{ el.classList.remove('show'); }, 1800);
+      }
+updateColors(){
         this.colors={
           gridH:getComputedStyle(document.documentElement).getPropertyValue('--gridH').trim(),
           gridV:getComputedStyle(document.documentElement).getPropertyValue('--gridV').trim(),
