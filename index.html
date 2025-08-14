@@ -70,19 +70,33 @@
     }
     .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
     .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px; transition: background-color .3s, border-color .3s;}
+
+    /* === NEW: toolbars (หัวมุมขวาบน) ให้สไลด์ FFT/Octave สวยและเท่ากัน === */
+    .toolbar{display:flex; align-items:center; gap:12px;}
+    .toolbar .stack{display:flex; align-items:center; gap:8px;}
+    .toolbar label{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted)}
+    .toolbar select{
+      height:32px; min-width:64px; padding:0 8px;
+      border-radius:8px; background:rgba(0,0,0,.25); color:var(--text);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .toolbar input[type="range"]{ width:140px; vertical-align:middle; }
+    .icon-btn{ width:36px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center;
+      border-radius:10px; font-size:16px; line-height:1; background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.12); color:var(--text);}
+    .icon-btn svg{ width:20px; height:20px; pointer-events:none; display:block; }
+    .icon-btn[data-active="1"]{ outline:1px solid rgba(255,255,255,.18); }
+
+    @media (max-width:480px){
+      .toolbar input[type="range"]{ width:110px; }
+      .icon-btn{ width:34px; height:30px; }
+    }
+
     button,select,input[type=range]{-webkit-tap-highlight-color:transparent}
     button{background:var(--accent-color);border:none;color:white;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;transition:background-color .2s, opacity .2s;}
     button:disabled{opacity:.5;cursor:not-allowed;}
     button.secondary{background:rgba(0,0,0,.2);} button.ghost{background:rgba(0,0,0,.2);}
-    .icon-btn{
-      width:36px; height:32px; padding:0;
-      display:inline-flex; align-items:center; justify-content:center;
-      border-radius:10px; font-size:16px; line-height:1;
-    }
-    .icon-btn svg{ width:20px; height:20px; pointer-events:none; display:block; }
-    .icon-btn[data-active="1"]{ outline:1px solid rgba(255,255,255,.18); }
-
     label{font-size:12px;color:var(--muted)}
+
     .meters{display:grid;grid-template-columns:1fr;gap:12px}
     canvas{width:100%;height:320px;background:var(--bg1);border-radius:12px;touch-action:none; display:block; transition: background-color .3s;}
 
@@ -91,10 +105,7 @@
     .dbLabel{position:absolute;font-size:10px;color:var(--muted);bottom:4px}
 
     .hint{font-size:12px;color:var(--muted)}
-    .kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .kv div{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px}
-    .kv b{display:block;color:var(--text);font-size:12px;margin-bottom:4px}
-    .badges{display:flex;justify-content:flex-end;gap:6px;}
+    .badges{display:flex;justify-content:center;gap:6px;flex:1}
     .badge{padding:4px 8px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);font-size:12px;color:#e5e7eb;white-space:nowrap}
     .tip{position:absolute;padding:4px 6px;font-size:12px;color:#e5e7eb;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);border-radius:8px;transform:translate(-50%,-100%);pointer-events:none;white-space:nowrap;z-index:10}
     .plot{position:relative;height:320px;margin-top:8px}
@@ -151,7 +162,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 3.0)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.5)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -189,22 +200,23 @@
       <!-- FFT -->
       <div class="card" id="fftCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
-          <div class="row"><b>RTA FFT - Log</b></div>
-          <div class="badges" style="margin-left:auto;margin-right:auto;">
+          <b>RTA FFT - Log</b>
+          <div class="badges">
             <span class="badge" id="fftPeakText">Peak: —</span>
             <span class="badge" id="fftHoldText" style="display:none;">Hold: —</span>
           </div>
-          <div class="row">
-            <label>FFT Size
-              <input id="fftRangeSlider" type="range" min="0" max="3" step="1" value="1">
-              <select id="fftSizePreset">
-                <option value="2048">2048</option>
-                <option value="4096" selected>4096</option>
-                <option value="8192">8192</option>
-                <option value="16384">16384</option>
-              </select>
-            </label>
-            <!-- fullscreen button with stable SVG -->
+          <div class="toolbar">
+            <div class="stack">
+              <label>FFT Size
+                <input id="fftRangeSlider" type="range" min="0" max="3" step="1" value="1" aria-label="FFT size preset">
+                <select id="fftSizePreset">
+                  <option value="2048">2048</option>
+                  <option value="4096" selected>4096</option>
+                  <option value="8192">8192</option>
+                  <option value="16384">16384</option>
+                </select>
+              </label>
+            </div>
             <button class="ghost icon-btn" id="fsFFT" title="Fullscreen" aria-label="Fullscreen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -224,7 +236,7 @@
 
       <!-- Octave -->
       <div class="card" id="octCard">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
+        <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
             <b>RTA</b>
             <select id="octRes">
@@ -234,20 +246,22 @@
             </select>
             <b id="octTitle">Octave</b>
           </div>
-          <div class="badges" style="margin-left:auto;margin-right:auto;">
+          <div class="badges">
             <span class="badge" id="octPeakText">Peak: —</span>
             <span class="badge" id="octHoldText" style="display:none;">Hold: —</span>
           </div>
-          <div class="row">
-            <label style="display:flex;align-items:center;gap:6px">Range
-              <input id="octRangeSlider" type="range" min="64" max="1023" step="1" value="255" aria-label="Octave bar range">
-              <select id="octRangePreset">
-                <option value="127">127</option>
-                <option value="255" selected>256</option>
-                <option value="511">512</option>
-              </select>
-            </label>
-            <span class="hint" id="octRangeText">0–255</span>
+          <div class="toolbar">
+            <div class="stack">
+              <label>Range
+                <input id="octRangeSlider" type="range" min="64" max="1023" step="1" value="255" aria-label="Octave bar range">
+                <select id="octRangePreset">
+                  <option value="127">127</option>
+                  <option value="255" selected>256</option>
+                  <option value="511">512</option>
+                </select>
+              </label>
+              <span class="hint" id="octRangeText">0–255</span>
+            </div>
             <button class="ghost icon-btn" id="fsOct" title="Fullscreen" aria-label="Fullscreen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -267,24 +281,26 @@
 
       <!-- Spectrogram -->
       <div class="card" id="heatmapCard">
-        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
+        <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
             <button id="btnToggleHeatmap" class="ghost" aria-pressed="false">OFF</button>
             <button id="btnHeatmapQuality" class="ghost" aria-pressed="true">HD</button>
           </div>
-          <div class="badges" style="margin-left:auto;margin-right:auto;">
+          <div class="badges">
             <span class="badge" id="heatmapAthText">ATH: —</span>
             <button id="btnClearAth" class="ghost" style="font-size:12px;padding:4px 8px; margin-left:4px;">Clear</button>
           </div>
-          <div class="row">
-            <label style="display:flex;align-items:center;gap:6px">Range
-              <input id="heatmapRangeSlider" type="range" min="5" max="100" step="5" value="50" aria-label="Heatmap range">
-              <select id="heatmapRangePreset">
-                <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="40">40</option>
-                <option value="50" selected>50</option><option value="60">60</option><option value="80">80</option><option value="100">100</option>
-              </select>
-            </label>
-            <span class="hint" id="heatmapRangeText">-50 dBFS</span>
+          <div class="toolbar">
+            <div class="stack">
+              <label>Range
+                <input id="heatmapRangeSlider" type="range" min="5" max="100" step="5" value="50" aria-label="Heatmap range">
+                <select id="heatmapRangePreset">
+                  <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="40">40</option>
+                  <option value="50" selected>50</option><option value="60">60</option><option value="80">80</option><option value="100">100</option>
+                </select>
+              </label>
+              <span class="hint" id="heatmapRangeText">-50 dBFS</span>
+            </div>
             <button class="ghost icon-btn" id="fsHeat" title="Fullscreen" aria-label="Fullscreen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -324,9 +340,9 @@
       </div>
     </div>
 
-    <div class="card kv">
-      <div><b>ระดับ RMS (ดิบ dBFS)</b><span id="rms">—</span></div>
-      <div><b>ความถี่พีคโดยประมาณ</b><span id="peak">—</span></div>
+    <div class="card" class="kv">
+      <div><b>ระดับ RMS (ดิบ dBFS)</b> <span id="rms">—</span></div>
+      <div><b>ความถี่พีคโดยประมาณ</b> <span id="peak">—</span></div>
     </div>
   </div>
 
@@ -497,7 +513,7 @@
           this.updateHeatmapRangeText();
         });
 
-        // fullscreen binds (SVG icon stays constant)
+        // fullscreen binds
         this.setupFsToggle(this.dom.fsFFT,this.dom.fftCard);
         this.setupFsToggle(this.dom.fsOct,this.dom.octCard);
         this.setupFsToggle(this.dom.fsHeat,this.dom.heatmapCard);
@@ -510,7 +526,6 @@
         this.dom.fabAwt  .addEventListener('click',()=>this.dom.btnAweight.click());
 
         window.addEventListener('resize',()=>this.handleResize());
-
         document.addEventListener('webkitfullscreenchange',()=>this.onFullscreenChange());
         document.addEventListener('fullscreenchange',()=>this.onFullscreenChange());
       }
