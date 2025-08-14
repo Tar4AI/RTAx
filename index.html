@@ -452,7 +452,7 @@
             <span id="rms">—</span>
           </div>
           <div class="kv-item">
-            <b>ความถี่พีคโดยประมาณ</b>
+            <b>โน้ตจาก ATH</b>
             <span id="peak">—</span>
           </div>
           <div class="kv-item">
@@ -934,6 +934,15 @@
       clamp01(v){return Math.min(1,Math.max(0,v));}
       dbfs(v){return 20*Math.log10(v/255+1e-12);}
       fmtHz(f){return f>=1000?(((f/1000)>=10?(f/1000).toFixed(0):(f/1000).toFixed(1))+' kHz'):(Math.round(f)+' Hz');}
+      freqToNote(freq){
+        if(!(freq>0) || !isFinite(freq)) return '—';
+        const midi = Math.round(69 + 12 * Math.log2(freq / 440));
+        const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+        const name = names[((midi % 12) + 12) % 12];
+        const octave = Math.floor(midi / 12) - 1;
+        return `${name}${octave}`;
+      }
+    
       aWeighting(f){const f2=f*f; const ra=(12194**2*f2**2)/((f2+20.6**2)*Math.sqrt((f2+107.7**2)*(f2+737.9**2))*(f2+12194**2)); return 20*Math.log10(ra)+2.00;}
       fmax(){return Math.min(this.state.sampleRate/2,22050);}
       mapLogX(f,w){const fm=this.fmax(),fmin=20; const t=(Math.log10(Math.max(f,fmin))-Math.log10(fmin))/(Math.log10(fm)-Math.log10(fmin)); return this.PAD.L+t*(w-this.PAD.L-this.PAD.R);}
@@ -1078,7 +1087,7 @@
         let peakBin=0,peakVal=-Infinity; for(let i=0;i<N;i++) if(this.state.freqArray[i]>peakVal){peakVal=this.state.freqArray[i]; peakBin=i;}
         const peakHz=peakBin*fpb; 
         this.dom.fftPeakText.textContent=`Peak: ${this.fmtHz(peakHz)}`;
-        this.dom.peak.textContent = this.fmtHz(peakHz);
+        this.dom.peak.textContent = this.freqToNote(this.state.allTimeHighPeak.freq);
 
         // Update All-Time High Peak
         if (peakVal > this.state.allTimeHighPeak.val) {
