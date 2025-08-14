@@ -276,6 +276,21 @@
         border-radius: 8px;
     }
 
+    /* --- Mobile Landscape Fullscreen Fix --- */
+    @media (max-width: 920px) and (orientation: landscape) {
+      .card.is-fullscreen, :fullscreen {
+        top: env(safe-area-inset-top);
+        left: env(safe-area-inset-left);
+        right: env(safe-area-inset-right);
+        bottom: env(safe-area-inset-bottom);
+        width: auto;
+        height: auto;
+      }
+      .card.is-fullscreen .plot, :fullscreen .plot {
+        height: calc(100% - 80px); 
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -292,7 +307,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.6)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.7)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
