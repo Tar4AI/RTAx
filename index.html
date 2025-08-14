@@ -285,9 +285,10 @@
         bottom: env(safe-area-inset-bottom);
         width: auto;
         height: auto;
+        padding-bottom: 0; /* Remove bottom padding to allow plot to extend */
       }
       .card.is-fullscreen .plot, :fullscreen .plot {
-        height: calc(100% - 80px); 
+        height: calc(100% - 80px); /* Adjust height considering the top toolbar */
       }
     }
 
