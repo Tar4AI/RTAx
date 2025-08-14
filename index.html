@@ -205,10 +205,10 @@
     .tip{position:absolute;padding:4px 6px;font-size:12px;color:#e5e7eb;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.12);border-radius:8px;transform:translate(-50%,-100%);pointer-events:none;white-space:nowrap;z-index:10}
     .plot{position:relative;height:320px;margin-top:8px}
 
-    .dba-values-row{display:flex;justify-content:space-between;gap:8px}
-    .dba-values-row .kv-item{flex:1;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;text-align:center}
-    .dba-values-row .kv-item b{display:block;color:var(--text);font-size:12px;margin-bottom:4px; font-weight:normal; color:var(--muted);}
-    .dba-values-row .kv-item span{ font-size:18px; font-weight:600; color:var(--text); }
+    .values-grid{display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;}
+    .kv-item{flex:1;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:8px;text-align:center}
+    .kv-item b{display:block;color:var(--text);font-size:12px;margin-bottom:4px; font-weight:normal; color:var(--muted);}
+    .kv-item span{ font-size:18px; font-weight:600; color:var(--text); }
     input[type="range"], input[type="checkbox"]{accent-color:var(--accent-color)}
 
     /* fullscreen fallback */
@@ -246,6 +246,7 @@
 </head>
 <body>
   <div class="wrap">
+    <!-- Error -->
     <div id="errBox" class="card" style="display:none;border-color:#e53e3e;background:#1c2430">
       <b style="color:#fca5a5">เริ่มวัดไม่ได้</b>
       <div id="errMsg" class="hint" style="color:#fca5a5">—</div>
@@ -257,13 +258,13 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.5)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.7)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
           <button id="btnHold" class="ghost" aria-pressed="true">📌 Hold Peak: ON</button>
-          <button id="btnClear" class="secondary">♻️ Clear Peak</button>
-          <button id="btnAweight" class="ghost" aria-pressed="true" title="สลับ A-weighting">A-weighting: ON</button>
+          <button id="btnClear" class="secondary">♻️ Clear Peak & ATH</button>
+          <button id="btnAweight" class="ghost" aria-pressed="false" title="สลับ A-weighting">A-weighting: OFF</button>
         </div>
       </div>
 
@@ -294,6 +295,7 @@
     </div>
 
     <div class="meters">
+      <!-- FFT -->
       <div class="card" id="fftCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <b>FFT - Log</b>
@@ -330,6 +332,7 @@
         </div>
       </div>
 
+      <!-- Octave -->
       <div class="card" id="octCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
@@ -373,6 +376,7 @@
         </div>
       </div>
 
+      <!-- Spectrogram -->
       <div class="card" id="heatmapCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
@@ -411,9 +415,10 @@
         </div>
       </div>
 
+      <!-- dB meter -->
       <div class="card">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
-          <b>ความดังรวม dB-A</b>
+          <b>ความดังรวม dB</b>
           <button id="btnResetDba" class="secondary" style="font-size:12px;padding:6px 10px;">♻️ Reset AVG/MAX</button>
         </div>
         <div id="dbMeterContainer">
@@ -424,15 +429,16 @@
           <span class="dbLabel" style="left:85.71%">120</span>
           <span class="dbLabel" style="right:0">140</span>
         </div>
-        <div class="dba-values-row" style="margin-top:12px;">
-          <div class="kv-item"><b>Realtime (dB-A)</b><span id="dbRealtimeValue">—</span></div>
-          <div class="kv-item"><b>AVG (dB-A)</b><span id="dbAvgValue">—</span></div>
-          <div class="kv-item"><b>MAX (dB-A)</b><span id="dbMaxValue">—</span></div>
+        <div class="values-grid" style="margin-top:12px;">
+          <div class="kv-item"><b>Realtime (dB)</b><span id="dbRealtimeValue">—</span></div>
+          <div class="kv-item"><b>AVG (dB)</b><span id="dbAvgValue">—</span></div>
+          <div class="kv-item"><b>MAX (dB)</b><span id="dbMaxValue">—</span></div>
         </div>
       </div>
 
+      <!-- RMS / Peak / ATH -->
       <div class="card">
-        <div class="dba-values-row">
+        <div class="values-grid">
           <div class="kv-item">
             <b>ระดับ RMS (ดิบ dBFS)</b>
             <span id="rms">—</span>
@@ -441,18 +447,24 @@
             <b>ความถี่พีคโดยประมาณ</b>
             <span id="peak">—</span>
           </div>
+          <div class="kv-item">
+            <b>All-Time High Peak</b>
+            <span id="athPeak">—</span>
+          </div>
         </div>
       </div>
 
+      <!-- Calibration -->
       <div class="card">
         <div class="row" style="justify-content: space-between; align-items: center;">
-          <div class="hint" style="max-width: 55%;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dBA (จากไมค์มือถือ)</div>
+          <div class="hint" style="max-width: 55%;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dB (จากไมค์มือถือ)</div>
           <label style="display:flex; flex-direction:row; align-items:center; gap:8px;">Calibration Offset (dB)
-            <input type="number" id="calibrationOffset" value="110" style="width: 70px; text-align: center; padding: 0 8px;">
+            <input type="number" id="calibrationOffset" value="80" style="width: 70px; text-align: center; padding: 0 8px;">
           </label>
         </div>
       </div>
 
+      <!-- Disclaimer -->
       <div class="card">
         <p class="hint" style="margin:0; text-align: center;"><b>ข้อจำกัด:</b> ไมค์มือถือมี DSP/AGC และการตอบสนองความถี่ไม่แฟลต ใช้ดูแนว EQ ได้แต่ไม่ใช่วัดระดับ SPL มืออาชีพ</p>
       </div>
@@ -460,12 +472,13 @@
     </div>
   </div>
 
+  <!-- Floating command dock (icon-only) -->
   <div class="float-dock" aria-label="Quick controls">
     <button id="fabStart" class="fab" title="เริ่มวัด">▶️</button>
     <button id="fabStop"  class="fab" title="หยุด" disabled>⏸️</button>
     <button id="fabHold"  class="fab" title="Hold Peak" aria-pressed="true">📌</button>
-    <button id="fabClear" class="fab" title="Clear Peak">♻️</button>
-    <button id="fabAwt"   class="fab" title="A-weighting" aria-pressed="true">👂</button>
+    <button id="fabClear" class="fab" title="Clear Peak & ATH">♻️</button>
+    <button id="fabAwt"   class="fab" title="A-weighting" aria-pressed="false">👂</button>
   </div>
 
   <script>
@@ -487,11 +500,14 @@
           dataArray:null,freqArray:null,
           sampleRate:48000,running:false,
           holdEnabled:true,heatmapEnabled:false,heatmapIsHD:true,
-          aWeightEnabled:true,
+          aWeightEnabled:false, // Default to OFF
           peakArray:null,peakOct:null,avgBuffer:null,
           octN:12,bands:[],
           heatmapData:[],heatmapFreqBinMap:null,lastHeatmapUpdate:0,
-          calibrationOffset:110,maxDba:-Infinity,dbaValues:[],
+          athHeatmap:{value:-Infinity,bin:0},
+          allTimeHighPeak: { freq: 0, val: -Infinity }, // New state for ATH peak
+          calibrationOffset:80, // Default to 80
+          maxDba:-Infinity,dbaValues:[],
           octRangeMax:255,heatmapRangeMax:50,
           guideFFT:null,guideOCT:null,guideHeatmap:null,
           demo:{enabled:false,oscillators:[],noise:null,gain:null}
@@ -502,7 +518,7 @@
         this.updateColors();
         
         // Sync initial state from DOM
-        this.state.calibrationOffset = parseFloat(this.dom.calibrationOffset.value) || 110;
+        this.state.calibrationOffset = parseFloat(this.dom.calibrationOffset.value) || 80;
         this.state.aWeightEnabled = this.dom.btnAweight.getAttribute('aria-pressed') === 'true';
 
         // Floating dock (follow fullscreen)
@@ -524,8 +540,8 @@
           'octHoldText','heatmapAthText','fftCanvas','octCanvas','heatmapCanvas','dbMeterCanvas',
           'fftTip','octTip','heatmapTip','dbRealtimeValue','dbAvgValue','dbMaxValue',
           'octTitle','octRes','octRangePreset','octRangeSlider','octRangeText','heatmapRangeSlider',
-          'heatmapRangePreset','heatmapRangeText','rms','peak','errBox','errMsg','fsOct','fsFFT','fsHeat',
-          'calibrationOffset', /* <-- Added */
+          'heatmapRangePreset','heatmapRangeText','rms','peak','athPeak','errBox','errMsg','fsOct','fsFFT','fsHeat',
+          'calibrationOffset',
           /* floating buttons */ 'fabStart','fabStop','fabHold','fabClear','fabAwt'
         ];
         const dom={}; ids.forEach(id=>dom[id]=document.getElementById(id));
@@ -994,6 +1010,11 @@
         this.dom.fftPeakText.textContent=`Peak: ${this.fmtHz(peakHz)}`;
         this.dom.peak.textContent = this.fmtHz(peakHz);
 
+        // Update All-Time High Peak
+        if (peakVal > this.state.allTimeHighPeak.val) {
+          this.state.allTimeHighPeak = { freq: peakHz, val: peakVal };
+          this.dom.athPeak.textContent = this.fmtHz(this.state.allTimeHighPeak.freq);
+        }
 
         let holdBin=0,holdVal=0; for(let i=0;i<N;i++) if(this.state.peakArray[i]>holdVal){holdVal=this.state.peakArray[i]; holdBin=i;}
         if(holdVal>0){
@@ -1155,7 +1176,19 @@
       }
       resetDbaValues(){this.state.maxDba=-Infinity; this.state.dbaValues=[]; this.dom.dbRealtimeValue.textContent='—'; this.dom.dbAvgValue.textContent='—'; this.dom.dbMaxValue.textContent='—';}
 
-      clearPeak(){this.state.peakArray?.fill(0); this.state.peakOct?.fill(0);}
+      clearPeak(){
+        // Clear peak hold arrays for FFT and Octave plots
+        this.state.peakArray?.fill(0); 
+        this.state.peakOct?.fill(0);
+        
+        // Clear All-Time High for Heatmap (Spectrogram)
+        this.state.athHeatmap = { value: -Infinity, bin: 0 };
+        this.dom.heatmapAthText.textContent = 'ATH: —';
+
+        // Clear All-Time High for Peak Frequency
+        this.state.allTimeHighPeak = { freq: 0, val: -Infinity };
+        this.dom.athPeak.textContent = '—';
+      }
       updateOctaveRangeText(){this.dom.octRangeText.textContent=`0–${this.state.octRangeMax}`;}
       updateHeatmapRangeText(){this.dom.heatmapRangeText.textContent=`-${this.state.heatmapRangeMax} dBFS`;}
       showError(msg){this.dom.errBox.style.display='block'; this.dom.errMsg.textContent=msg;}
