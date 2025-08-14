@@ -317,7 +317,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.7)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.8)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -1216,7 +1216,18 @@
         ctx.save(); ctx.globalAlpha=.35; ctx.strokeStyle=this.colors.peak; ctx.lineWidth=1.25; ctx.stroke(); ctx.restore();
 
         let peakBin=0,peakVal=-Infinity; for(let i=0;i<N;i++) if(this.state.freqArray[i]>peakVal){peakVal=this.state.freqArray[i]; peakBin=i;}
-        const peakHz=peakBin*fpb; 
+        
+        let peakHz = peakBin * fpb;
+        if (peakBin > 0 && peakBin < N - 1) {
+            const alpha = this.state.freqArray[peakBin - 1];
+            const beta = this.state.freqArray[peakBin];
+            const gamma = this.state.freqArray[peakBin + 1];
+            const p = 0.5 * (alpha - gamma) / (alpha - 2 * beta + gamma);
+            if (Math.abs(p) < 1) {
+                peakHz = (peakBin + p) * fpb;
+            }
+        }
+        
         this.dom.fftPeakText.textContent=`Peak: ${this.fmtHz(peakHz)}`;
         this.dom.peak.textContent = this.freqToNote(this.state.allTimeHighPeak.freq);
 
