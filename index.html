@@ -70,6 +70,48 @@
       --select-shadow:0 2px 8px rgba(0,0,0,.35) inset, 0 0 0 0 rgba(0,0,0,0);
       --select-shadow-focus:0 0 0 2px rgba(217,119,6,.25);
     }
+    
+    /* --- Theme: Midnight Neon --- */
+    [data-theme="midnight-neon"]{
+      --bg1:#0B0914; --bg2:#120F22; --card:#1C1933; --text:#D8D3F5; --muted:#7A759C;
+      --gridH:rgba(220, 210, 255, .08); --gridV:rgba(220, 210, 255, .04);
+      --frame:rgba(220, 210, 255, .12); --label:rgba(220, 210, 255, .90);
+      --fft:#F43F5E; --peak:#0CF1E5; --hold:#FBBF24; --bar:#F43F5E;
+      --heatmap-color-1:#0B0914; --heatmap-color-2:#3D3A63; --heatmap-color-3:#BE3887;
+      --heatmap-color-4:#F43F5E; --heatmap-color-5:#FBBF24;
+      --dba-meter-bg-green:#0CF1E5; --dba-meter-bg-yellow:#FBBF24;
+      --dba-meter-bg-orange:#F43F5E; --dba-meter-bg-red:#f43f82;
+      --accent-color:#0CF1E5;
+
+      /* dropdown tones */
+      --select-bg:rgba(12, 10, 30, .55);
+      --select-bg-hover:rgba(12, 10, 30, .75);
+      --select-border:rgba(220, 210, 255, .18);
+      --select-border-focus:rgba(12, 241, 229, .7);
+      --select-shadow:0 2px 8px rgba(0,0,0,.35) inset, 0 0 0 0 rgba(0,0,0,0);
+      --select-shadow-focus:0 0 0 2px rgba(12, 241, 229, .25);
+    }
+
+    /* --- Theme: Emerald Gold --- */
+    [data-theme="emerald-gold"]{
+      --bg1:#0F1D1A; --bg2:#0A1412; --card:#1A2C28; --text:#E2E8F0; --muted:#8A9A95;
+      --gridH:rgba(200, 220, 210, .08); --gridV:rgba(200, 220, 210, .04);
+      --frame:rgba(200, 220, 210, .12); --label:rgba(226, 232, 240, .90);
+      --fft:#10B981; --peak:#F59E0B; --hold:#FDE047; --bar:#10B981;
+      --heatmap-color-1:#0F1D1A; --heatmap-color-2:#2F574D; --heatmap-color-3:#10B981;
+      --heatmap-color-4:#F59E0B; --heatmap-color-5:#EF4444;
+      --dba-meter-bg-green:#10B981; --dba-meter-bg-yellow:#F59E0B;
+      --dba-meter-bg-orange:#FB923C; --dba-meter-bg-red:#EF4444;
+      --accent-color:#F59E0B;
+
+      /* dropdown tones */
+      --select-bg:rgba(10, 20, 18, .55);
+      --select-bg-hover:rgba(10, 20, 18, .75);
+      --select-border:rgba(200, 220, 210, .18);
+      --select-border-focus:rgba(245, 158, 11, .7);
+      --select-shadow:0 2px 8px rgba(0,0,0,.35) inset, 0 0 0 0 rgba(0,0,0,0);
+      --select-shadow-focus:0 0 0 2px rgba(245, 158, 11, .25);
+    }
 
     :root{ color-scheme:dark }
     html{ background:var(--bg1) }
@@ -199,7 +241,6 @@
 </head>
 <body>
   <div class="wrap">
-    <!-- Error -->
     <div id="errBox" class="card" style="display:none;border-color:#e53e3e;background:#1c2430">
       <b style="color:#fca5a5">เริ่มวัดไม่ได้</b>
       <div id="errMsg" class="hint" style="color:#fca5a5">—</div>
@@ -240,13 +281,14 @@
             <option value="dark-matter">Dark Matter</option>
             <option value="studio-blue" selected>Studio Blue</option>
             <option value="vintage-amber">Vintage Amber</option>
+            <option value="midnight-neon">Midnight Neon</option>
+            <option value="emerald-gold">Emerald Gold</option>
           </select>
         </label>
       </div>
     </div>
 
     <div class="meters">
-      <!-- FFT -->
       <div class="card" id="fftCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <b>FFT - Log</b>
@@ -283,7 +325,6 @@
         </div>
       </div>
 
-      <!-- Octave -->
       <div class="card" id="octCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
@@ -327,7 +368,6 @@
         </div>
       </div>
 
-      <!-- Spectrogram -->
       <div class="card" id="heatmapCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
@@ -366,7 +406,6 @@
         </div>
       </div>
 
-      <!-- dB meter -->
       <div class="card">
         <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:2px">
           <b>ความดังรวม dB</b>
@@ -394,7 +433,6 @@
     </div>
   </div>
 
-  <!-- Floating command dock (icon-only) -->
   <div class="float-dock" aria-label="Quick controls">
     <button id="fabStart" class="fab" title="เริ่มวัด">▶️</button>
     <button id="fabStop"  class="fab" title="หยุด" disabled>⏸️</button>
