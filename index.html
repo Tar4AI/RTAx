@@ -258,7 +258,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.7)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.8)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -456,11 +456,11 @@
 
       <!-- Calibration -->
       <div class="card">
-        <div class="row" style="justify-content: space-between; align-items: center;">
-          <div class="hint" style="max-width: 55%;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dB (จากไมค์มือถือ)</div>
-          <label style="display:flex; flex-direction:row; align-items:center; gap:8px;">Calibration Offset (dB)
-            <input type="number" id="calibrationOffset" value="80" style="width: 70px; text-align: center; padding: 0 8px;">
-          </label>
+        <div class="row" style="justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div class="hint" style="flex-basis: 100%; margin-bottom: 4px;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dB (จากไมค์มือถือ)</div>
+          <label for="calibrationSlider" style="flex-shrink: 0; margin-right: 8px;">Calibration (dB)</label>
+          <input type="range" id="calibrationSlider" min="50" max="150" step="1" value="80" style="flex-grow: 1; min-width: 150px;">
+          <input type="number" id="calibrationOffset" value="80" style="width: 70px; text-align: center;">
         </div>
       </div>
 
@@ -519,6 +519,7 @@
         
         // Sync initial state from DOM
         this.state.calibrationOffset = parseFloat(this.dom.calibrationOffset.value) || 80;
+        this.dom.calibrationSlider.value = this.state.calibrationOffset;
         this.state.aWeightEnabled = this.dom.btnAweight.getAttribute('aria-pressed') === 'true';
 
         // Floating dock (follow fullscreen)
@@ -541,7 +542,7 @@
           'fftTip','octTip','heatmapTip','dbRealtimeValue','dbAvgValue','dbMaxValue',
           'octTitle','octRes','octRangePreset','octRangeSlider','octRangeText','heatmapRangeSlider',
           'heatmapRangePreset','heatmapRangeText','rms','peak','athPeak','errBox','errMsg','fsOct','fsFFT','fsHeat',
-          'calibrationOffset',
+          'calibrationOffset', 'calibrationSlider',
           /* floating buttons */ 'fabStart','fabStop','fabHold','fabClear','fabAwt'
         ];
         const dom={}; ids.forEach(id=>dom[id]=document.getElementById(id));
@@ -602,11 +603,21 @@
 
         this.dom.themeSelector.addEventListener('change',(e)=>this.applyTheme(e.target.value));
 
+        // Calibration Offset Slider
+        this.dom.calibrationSlider.addEventListener('input', (e) => {
+          const offset = parseFloat(e.target.value);
+          if (!isNaN(offset)) {
+            this.state.calibrationOffset = offset;
+            this.dom.calibrationOffset.value = offset;
+          }
+        });
+
         // Calibration Offset Input
         this.dom.calibrationOffset.addEventListener('input', (e) => {
           const offset = parseFloat(e.target.value);
           if (!isNaN(offset)) {
             this.state.calibrationOffset = offset;
+            this.dom.calibrationSlider.value = offset;
           }
         });
 
@@ -1245,4 +1256,4 @@
   })();
   </script>
 </body>
-</html>
+</html
