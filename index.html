@@ -520,6 +520,8 @@
           octRangeMax:255,heatmapRangeMax:50,
           guideFFT:null,guideOCT:null,guideHeatmap:null,
           demo:{enabled:false,oscillators:[],noise:null,gain:null}
+        ,
+          sleepAfterMs:60000, wasRunningBeforeSleep:false, autoDisabledHeatmap:false
         };
 
         // default theme
@@ -537,6 +539,11 @@
         this.dockHome = this.dock ? this.dock.parentElement : null;
 
         this.setupEventListeners();
+        // --- Sleep Mode timers/flags ---
+        this._sleepTimer = null;
+        this._hiddenAt = null;
+        this._sleeping = false;
+
         this.setupCanvases();
         this.updateOctaveRangeText();
         this.updateHeatmapRangeText();
@@ -561,6 +568,40 @@
         dom.heatmapCard=document.getElementById('heatmapCard');
         return dom;
       }
+      // --- Sleep/Resume helpers ---
+      enterSleep(reason='hidden'){
+        if(this._sleeping) return;
+        this._sleeping = true;
+        // remember states
+        this.state.wasRunningBeforeSleep = !!this.state.running;
+        if(this.state.heatmapEnabled){
+          this.state.autoDisabledHeatmap = true;
+          this.state.heatmapEnabled = false;
+          if(this.dom.btnToggleHeatmap){
+            this.dom.btnToggleHeatmap.setAttribute('aria-pressed','false');
+            this.dom.btnToggleHeatmap.textContent='OFF';
+          }
+          this.drawHeatmapOverlay();
+        }
+        if(this.state.running) this.stop();
+      }
+      exitSleep(){
+        if(!this._sleeping) return;
+        this._sleeping = false;
+        if(this.state.wasRunningBeforeSleep && !this.state.running){
+          // best-effort; if browser blocks auto-start, user can press Start
+          this.start().catch?.(()=>{});
+        }
+        if(this.state.autoDisabledHeatmap){
+          this.state.heatmapEnabled = true;
+          this.state.autoDisabledHeatmap = false;
+          if(this.dom.btnToggleHeatmap){
+            this.dom.btnToggleHeatmap.setAttribute('aria-pressed','true');
+            this.dom.btnToggleHeatmap.textContent='ON';
+          }
+        }
+      }
+
 
       preflight(){
         if(!navigator.mediaDevices?.getUserMedia){
@@ -672,6 +713,29 @@
           this.state.octRangeMax=parseInt(e.target.value,10);
           this.updateOctaveRangeText();
         });
+        // --- Page Visibility / Sleep Mode ---
+        const scheduleSleep = () => {
+          clearTimeout(this._sleepTimer);
+          this._sleepTimer = setTimeout(()=> this.enterSleep('timeout'), this.state.sleepAfterMs);
+        };
+        const clearSleepTimer = () => { clearTimeout(this._sleepTimer); this._sleepTimer=null; };
+
+        document.addEventListener('visibilitychange', () => {
+          if(document.hidden){
+            this._hiddenAt = Date.now();
+            scheduleSleep();
+          }else{
+            const elapsed = this._hiddenAt ? (Date.now() - this._hiddenAt) : 0;
+            clearSleepTimer();
+            if(this._sleeping || elapsed >= this.state.sleepAfterMs){ this.exitSleep(); }
+            this._hiddenAt = null;
+          }
+        });
+        window.addEventListener('blur', () => { if(!document.hidden) scheduleSleep(); });
+        window.addEventListener('focus', () => { clearSleepTimer(); if(this._sleeping) this.exitSleep(); });
+        window.addEventListener('pagehide', () => { this.enterSleep('pagehide'); });
+        window.addEventListener('pageshow', () => { this.exitSleep(); });
+
         this.dom.heatmapRangePreset.addEventListener('change',(e)=>{
           this.state.heatmapRangeMax=parseInt(e.target.value,10);
           this.dom.heatmapRangeSlider.value=this.state.heatmapRangeMax;
