@@ -265,6 +265,16 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
+    
+    /* Calibration controls */
+    .calibration-control .ghost {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        font-size: 18px;
+        line-height: 1;
+        border-radius: 8px;
+    }
 
   </style>
 </head>
@@ -282,7 +292,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.2)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.6)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -487,11 +497,13 @@
 
       <!-- Calibration -->
       <div class="card">
-        <div class="row" style="justify-content: space-between; align-items: center; flex-wrap: wrap;">
-          <div class="hint" style="flex-basis: 100%; margin-bottom: 4px;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dB (จากไมค์มือถือ)</div>
+        <div class="hint" style="flex-basis: 100%; margin-bottom: 4px;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dB (จากไมค์มือถือ)</div>
+        <div class="row calibration-control" style="justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%;">
           <label for="calibrationSlider" style="flex-shrink: 0; margin-right: 8px;">Offset (dB)</label>
-          <input type="range" id="calibrationSlider" min="50" max="150" step="1" value="80" style="flex-grow: 1; min-width: 150px;">
-          <input type="number" id="calibrationOffset" value="80" style="width: 70px; text-align: center;">
+          <button class="ghost" id="btnCalibrateMinus">-</button>
+          <input type="range" id="calibrationSlider" min="50" max="150" step="1" value="80" style="flex-grow: 1; min-width: 120px;">
+          <button class="ghost" id="btnCalibratePlus">+</button>
+          <input type="number" id="calibrationOffset" value="80" style="width: 70px; text-align: center; margin-left: 8px;">
         </div>
       </div>
 
@@ -509,7 +521,7 @@
     <button id="fabStop"  class="fab" title="หยุด" disabled>⏸️</button>
     <button id="fabHold"  class="fab" title="Hold Peak" aria-pressed="true">📌</button>
     <button id="fabClear" class="fab" title="Clear Peak & ATH">♻️</button>
-    <button id="fabAwt"   class="fab" title="A-weighting" aria-pressed="false">🎧</button>
+    <button id="fabAwt"   class="fab" title="A-weighting" aria-pressed="false">👂</button>
   </div>
 
   <script>
@@ -580,9 +592,9 @@
           'ec','ns','agc','themeSelector','fftRangeSlider','fftPeakText','fftHoldText','octPeakText',
           'octHoldText','heatmapAthText','fftCanvas','octCanvas','heatmapCanvas','dbMeterCanvas',
           'fftTip','octTip','heatmapTip','dbRealtimeValue','dbAvgValue','dbMaxValue',
-          'octTitle','octRes','octRangePreset','octRangeSlider','octRangeText','heatmapRangeSlider',
+          'octRes','octRangePreset','octRangeSlider','octRangeText','heatmapRangeSlider',
           'heatmapRangePreset','heatmapRangeText','rms','peak','athPeak','errBox','errMsg','fsOct','fsFFT','fsHeat',
-          'calibrationOffset', 'calibrationSlider', 'fftYScale',
+          'calibrationOffset', 'calibrationSlider', 'btnCalibrateMinus', 'btnCalibratePlus', 'fftYScale',
           /* floating buttons */ 'fabStart','fabStop','fabHold','fabClear','fabAwt'
         ];
         const dom={}; ids.forEach(id=>dom[id]=document.getElementById(id));
@@ -630,6 +642,16 @@
         if(!navigator.mediaDevices?.getUserMedia){
           this.showError('เบราว์เซอร์ไม่รองรับ getUserMedia — ลองใช้ Chrome/Edge/Firefox หรือ Safari รุ่นใหม่');
         }
+      }
+      
+      updateCalibrationValue(newValue) {
+        const min = parseInt(this.dom.calibrationSlider.min, 10);
+        const max = parseInt(this.dom.calibrationSlider.max, 10);
+        const value = Math.max(min, Math.min(max, newValue));
+
+        this.state.calibrationOffset = value;
+        this.dom.calibrationOffset.value = value;
+        this.dom.calibrationSlider.value = value;
       }
 
       setupEventListeners(){
@@ -683,23 +705,20 @@
           this.drawFFTBackground();
         });
 
-        // Calibration Offset Slider
+        // --- Calibration Controls ---
         this.dom.calibrationSlider.addEventListener('input', (e) => {
-          const offset = parseFloat(e.target.value);
-          if (!isNaN(offset)) {
-            this.state.calibrationOffset = offset;
-            this.dom.calibrationOffset.value = offset;
-          }
+            this.updateCalibrationValue(parseFloat(e.target.value));
+        });
+        this.dom.calibrationOffset.addEventListener('input', (e) => {
+            this.updateCalibrationValue(parseFloat(e.target.value));
+        });
+        this.dom.btnCalibrateMinus.addEventListener('click', () => {
+            this.updateCalibrationValue(this.state.calibrationOffset - 1);
+        });
+        this.dom.btnCalibratePlus.addEventListener('click', () => {
+            this.updateCalibrationValue(this.state.calibrationOffset + 1);
         });
 
-        // Calibration Offset Input
-        this.dom.calibrationOffset.addEventListener('input', (e) => {
-          const offset = parseFloat(e.target.value);
-          if (!isNaN(offset)) {
-            this.state.calibrationOffset = offset;
-            this.dom.calibrationSlider.value = offset;
-          }
-        });
 
         this.dom.fftSizePreset.addEventListener('change',(e)=>{
           const idx=[2048,4096,8192,16384].indexOf(parseInt(e.target.value,10));
