@@ -279,16 +279,25 @@
     /* --- Mobile Landscape Fullscreen Fix --- */
     @media (max-width: 920px) and (orientation: landscape) {
       .card.is-fullscreen, :fullscreen {
+        display: flex;
+        flex-direction: column;
         top: env(safe-area-inset-top);
         left: env(safe-area-inset-left);
         right: env(safe-area-inset-right);
         bottom: env(safe-area-inset-bottom);
         width: auto;
         height: auto;
-        padding-bottom: 0; /* Remove bottom padding to allow plot to extend */
+        padding: 12px;
+        padding-top: 8px;
+        box-sizing: border-box;
+      }
+      .card.is-fullscreen > .row:first-child {
+          flex-shrink: 0;
       }
       .card.is-fullscreen .plot, :fullscreen .plot {
-        height: calc(100% - 80px); /* Adjust height considering the top toolbar */
+        flex-grow: 1;
+        height: auto;
+        min-height: 0;
       }
     }
 
