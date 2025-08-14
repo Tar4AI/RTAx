@@ -165,8 +165,9 @@
     /* ===== Themed SELECT (ทุกดรอปดาวน์) ===== */
     select, input[type=number]{
       -webkit-appearance:none; -moz-appearance:none; appearance:none;
-      height:32px; min-width:64px;
-      padding:0 10px;
+      height:30px; 
+      min-width:0;
+      padding:0 8px;
       border-radius:8px;
       background:var(--select-bg);
       color:var(--text);
@@ -180,7 +181,7 @@
     select:disabled, input[type=number]:disabled{ opacity:.6; cursor:not-allowed; }
 
     /* ลูกศรแบบระบบ (คงไว้) + ระยะขอบขวาให้เสมอ */
-    select{ padding:0 28px 0 10px; }
+    select{ padding:0 24px 0 8px; }
     select::-ms-expand{ display:none; }
 
     /* สีของรายการในดรอปดาวน์ให้ไปตามธีม */
@@ -258,7 +259,7 @@
 
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0 0 4px 0">my RTAs (v 1.8)</h2>
+        <h2 style="margin:0 0 4px 0">my RTAs (v 1.9.2)</h2>
         <div class="row">
           <button id="btnStart">▶️ เริ่มวัด</button>
           <button id="btnStop" class="secondary" disabled>⏸️ หยุด</button>
@@ -298,7 +299,13 @@
       <!-- FFT -->
       <div class="card" id="fftCard">
         <div class="row" style="justify-content:space-between;align-items:center;">
-          <b>FFT - Log</b>
+          <div class="row">
+            <b>FFT - </b>
+            <select id="fftYScale">
+                <option value="log" selected>Log</option>
+                <option value="linear">Linear</option>
+            </select>
+          </div>
           <div class="badges">
             <span class="badge" id="fftPeakText">Peak: —</span>
             <span class="badge" id="fftHoldText" style="display:none;">Hold: —</span>
@@ -337,11 +344,12 @@
         <div class="row" style="justify-content:space-between;align-items:center;">
           <div class="row">
             <select id="octRes">
-              <option value="3">1/3</option>
-              <option value="6">1/6</option>
-              <option value="12" selected>1/12</option>
+                <option value="3">1/3</option>
+                <option value="6">1/6</option>
+                <option value="12" selected>1/12</option>
+                <option value="24">1/24</option>
             </select>
-            <b id="octTitle">Octave</b>
+            <b>Octave</b>
           </div>
           <div class="badges">
             <span class="badge" id="octPeakText">Peak: —</span>
@@ -458,7 +466,7 @@
       <div class="card">
         <div class="row" style="justify-content: space-between; align-items: center; flex-wrap: wrap;">
           <div class="hint" style="flex-basis: 100%; margin-bottom: 4px;">ตั้งค่าออฟเซ็ตเพื่อแปลง dBFS เป็น dB (จากไมค์มือถือ)</div>
-          <label for="calibrationSlider" style="flex-shrink: 0; margin-right: 8px;">Calibration (dB)</label>
+          <label for="calibrationSlider" style="flex-shrink: 0; margin-right: 8px;">Offset (dB)</label>
           <input type="range" id="calibrationSlider" min="50" max="150" step="1" value="80" style="flex-grow: 1; min-width: 150px;">
           <input type="number" id="calibrationOffset" value="80" style="width: 70px; text-align: center;">
         </div>
@@ -501,6 +509,7 @@
           sampleRate:48000,running:false,
           holdEnabled:true,heatmapEnabled:false,heatmapIsHD:true,
           aWeightEnabled:false, // Default to OFF
+          fftYScaleIsLog: true, // New state for FFT Y-axis scale
           peakArray:null,peakOct:null,avgBuffer:null,
           octN:12,bands:[],
           heatmapData:[],heatmapFreqBinMap:null,lastHeatmapUpdate:0,
@@ -521,6 +530,7 @@
         this.state.calibrationOffset = parseFloat(this.dom.calibrationOffset.value) || 80;
         this.dom.calibrationSlider.value = this.state.calibrationOffset;
         this.state.aWeightEnabled = this.dom.btnAweight.getAttribute('aria-pressed') === 'true';
+        this.state.fftYScaleIsLog = this.dom.fftYScale.value === 'log';
 
         // Floating dock (follow fullscreen)
         this.dock = document.querySelector('.float-dock');
@@ -542,7 +552,7 @@
           'fftTip','octTip','heatmapTip','dbRealtimeValue','dbAvgValue','dbMaxValue',
           'octTitle','octRes','octRangePreset','octRangeSlider','octRangeText','heatmapRangeSlider',
           'heatmapRangePreset','heatmapRangeText','rms','peak','athPeak','errBox','errMsg','fsOct','fsFFT','fsHeat',
-          'calibrationOffset', 'calibrationSlider',
+          'calibrationOffset', 'calibrationSlider', 'fftYScale',
           /* floating buttons */ 'fabStart','fabStop','fabHold','fabClear','fabAwt'
         ];
         const dom={}; ids.forEach(id=>dom[id]=document.getElementById(id));
@@ -602,6 +612,12 @@
         });
 
         this.dom.themeSelector.addEventListener('change',(e)=>this.applyTheme(e.target.value));
+
+        // FFT Y-Scale Selector
+        this.dom.fftYScale.addEventListener('change', (e) => {
+          this.state.fftYScaleIsLog = e.target.value === 'log';
+          this.drawFFTBackground();
+        });
 
         // Calibration Offset Slider
         this.dom.calibrationSlider.addEventListener('input', (e) => {
@@ -774,8 +790,8 @@
       }
 
       drawInitialFrames(){
-        this.drawBackground(this.canvases.fft.ctx);
-        this.drawBackground(this.canvases.oct.ctx);
+        this.drawFFTBackground();
+        this.drawLogGrid(this.canvases.oct.ctx);
         this.drawHeatmapBackground(this.canvases.heatmap.ctx);
         this.drawHeatmapOverlay();
         this.drawDbMeterBackground();
@@ -923,6 +939,7 @@
       mapLogX(f,w){const fm=this.fmax(),fmin=20; const t=(Math.log10(Math.max(f,fmin))-Math.log10(fmin))/(Math.log10(fm)-Math.log10(fmin)); return this.PAD.L+t*(w-this.PAD.L-this.PAD.R);}
       xToFreq(x,w){const fm=this.fmax(),fmin=20; const plotW=w-this.PAD.L-this.PAD.R; const t=this.clamp01((x-this.PAD.L)/plotW); const lf=Math.log10(fmin)+t*(Math.log10(fm)-Math.log10(fmin)); return Math.pow(10,lf);}
       mapDbToY(db,h){const norm=this.clamp01((db+100)/100); const plotH=h-this.PAD.T-this.PAD.B; return this.PAD.T+(1-norm)*plotH;}
+      mapLinearAmplitudeToY(val, h) { const norm = this.clamp01(val / 255); const plotH = h - this.PAD.T - this.PAD.B; return this.PAD.T + (1 - norm) * plotH; }
       mapLinearToYOct(v,h){const norm=this.clamp01(v/Math.max(1,this.state.octRangeMax)); const plotH=h-this.PAD.T-this.PAD.B; return this.PAD.T+(1-norm)*plotH;}
       mapDbToColorHeatmap(db){const maxDb=0,minDb=maxDb-this.state.heatmapRangeMax; const t=this.clamp01((db-minDb)/(maxDb-minDb));
         if(t<0.25) return this.colors.heatmap[0]; if(t<0.5) return this.colors.heatmap[1];
@@ -958,8 +975,38 @@
         }
         return bins;
       }
+      
+      drawFFTBackground() {
+        const ctx = this.canvases.fft.ctx;
+        if (!ctx) return;
+        const w = ctx.canvas.width / (window.devicePixelRatio || 1);
+        const h = ctx.canvas.height / (window.devicePixelRatio || 1);
+        const plotAreaH = h - this.PAD.T - this.PAD.B;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = this.colors.gridH;
+        for (let i = 0; i < 6; i++) { const y = this.PAD.T + (i / 5) * plotAreaH; ctx.beginPath(); ctx.moveTo(this.PAD.L, y); ctx.lineTo(w - this.PAD.R, y); ctx.stroke(); }
+        ctx.strokeStyle = this.colors.gridV;
+        const ticks = [20, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 2000, 4000, 8000, 16000];
+        ticks.forEach(t => { const x = this.mapLogX(t, w); ctx.beginPath(); ctx.moveTo(x, this.PAD.T); ctx.lineTo(x, this.PAD.T + plotAreaH); ctx.stroke(); });
+        ctx.strokeStyle = this.colors.frame; ctx.strokeRect(this.PAD.L, this.PAD.T, w - this.PAD.L - this.PAD.R, plotAreaH);
+        ctx.fillStyle = this.colors.label; ctx.font = '12px system-ui';
+        ctx.textBaseline = 'alphabetic';
+        [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000].forEach(t => { const x = this.mapLogX(t, w); ctx.fillText(t >= 1000 ? (t / 1000) + 'k' : t, x - 8, h - this.LABEL_Y); });
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i <= 5; i++) {
+            const y = this.PAD.T + (i / 5) * plotAreaH;
+            let label;
+            if (this.state.fftYScaleIsLog) {
+                label = `${-i * 20}`;
+            } else {
+                label = (1 - i / 5).toFixed(1);
+            }
+            ctx.fillText(label, this.PAD.L - 8, y);
+        }
+      }
 
-      drawBackground(ctx){
+      drawLogGrid(ctx){
         if(!ctx) return;
         const w=ctx.canvas.width/(window.devicePixelRatio||1);
         const h=ctx.canvas.height/(window.devicePixelRatio||1);
@@ -1004,16 +1051,28 @@
       drawFFT(){
         const {ctx}=this.canvases.fft; if(!ctx) return;
         const w=ctx.canvas.width/(window.devicePixelRatio||1), h=ctx.canvas.height/(window.devicePixelRatio||1);
-        this.drawBackground(ctx);
+        this.drawFFTBackground();
         if(!this.state.freqArray) return;
         const N=this.state.freqArray.length, fpb=this.state.sampleRate/(2*N);
+        
         if(this.state.holdEnabled){for(let i=0;i<N;i++) this.state.peakArray[i]=Math.max(this.state.peakArray[i],this.state.freqArray[i]);}
+        
         ctx.beginPath(); let started=false;
-        for(let i=1;i<N;i++){const f=i*fpb; if(f<20||f>this.fmax()) continue; const x=this.mapLogX(f,w), y=this.mapDbToY(this.dbfs(this.state.freqArray[i]),h); if(!started){ctx.moveTo(x,y); started=true;} else ctx.lineTo(x,y);}
+        for(let i=1;i<N;i++){
+            const f=i*fpb; if(f > this.fmax() || f < 20) continue;
+            const x = this.mapLogX(f,w);
+            const y = this.state.fftYScaleIsLog ? this.mapDbToY(this.dbfs(this.state.freqArray[i]),h) : this.mapLinearAmplitudeToY(this.state.freqArray[i], h);
+            if(!started){ctx.moveTo(x,y); started=true;} else ctx.lineTo(x,y);
+        }
         ctx.strokeStyle=this.colors.fft; ctx.lineWidth=2; ctx.stroke();
 
         ctx.beginPath(); started=false;
-        for(let i=1;i<N;i++){const f=i*fpb; if(f<20||f>this.fmax()) continue; const x=this.mapLogX(f,w), y=this.mapDbToY(this.dbfs(this.state.peakArray[i]||0),h); if(!started){ctx.moveTo(x,y); started=true;} else ctx.lineTo(x,y);}
+        for(let i=1;i<N;i++){
+            const f=i*fpb; if(f > this.fmax() || f < 20) continue;
+            const x = this.mapLogX(f,w);
+            const y = this.state.fftYScaleIsLog ? this.mapDbToY(this.dbfs(this.state.peakArray[i]||0),h) : this.mapLinearAmplitudeToY(this.state.peakArray[i]||0, h);
+            if(!started){ctx.moveTo(x,y); started=true;} else ctx.lineTo(x,y);
+        }
         ctx.save(); ctx.globalAlpha=.35; ctx.strokeStyle=this.colors.peak; ctx.lineWidth=1.25; ctx.stroke(); ctx.restore();
 
         let peakBin=0,peakVal=-Infinity; for(let i=0;i<N;i++) if(this.state.freqArray[i]>peakVal){peakVal=this.state.freqArray[i]; peakBin=i;}
@@ -1040,7 +1099,7 @@
       drawOctave(){
         const {ctx}=this.canvases.oct; if(!ctx) return;
         const w=ctx.canvas.width/(window.devicePixelRatio||1), h=ctx.canvas.height/(window.devicePixelRatio||1);
-        this.drawBackground(ctx);
+        this.drawLogGrid(ctx);
         if(!this.state.freqArray||!this.state.bands.length) return;
         const N=this.state.freqArray.length, fpb=this.state.sampleRate/(2*N);
         const vals=this.state.bands.map(b=>{
@@ -1208,7 +1267,7 @@
         let pressed=false;
         const getX=(e)=>{const r=canvas.getBoundingClientRect(); const xCss=(e.touches?e.touches[0].clientX:e.clientX)-r.left; return Math.max(this.PAD.L,Math.min(r.width-this.PAD.R,xCss));};
         const update=(xPx)=>{
-          const freq=this.xToFreq(xPx,canvas.getBoundingClientRect().width);
+          const freq = this.xToFreq(xPx, canvas.getBoundingClientRect().width);
           tip.style.display='block'; tip.textContent=this.fmtHz(freq); tip.style.left=xPx+'px'; tip.style.top='8px';
           const s={xPx,freq}; if(which==='fft') this.state.guideFFT=s; else if(which==='oct') this.state.guideOCT=s; else this.state.guideHeatmap=s;
         };
@@ -1256,4 +1315,4 @@
   })();
   </script>
 </body>
-</html
+</html>
