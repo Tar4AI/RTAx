@@ -74,11 +74,17 @@
     button{background:var(--accent-color);border:none;color:white;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;transition:background-color .2s, opacity .2s;}
     button:disabled{opacity:.5;cursor:not-allowed;}
     button.secondary{background:rgba(0,0,0,.2);} button.ghost{background:rgba(0,0,0,.2);}
-    .icon-btn{width:36px;height:32px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;font-size:16px}
+    .icon-btn{
+      width:36px; height:32px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:10px; font-size:16px; line-height:1;
+    }
+    .icon-btn svg{ width:20px; height:20px; pointer-events:none; display:block; }
+    .icon-btn[data-active="1"]{ outline:1px solid rgba(255,255,255,.18); }
 
     label{font-size:12px;color:var(--muted)}
     .meters{display:grid;grid-template-columns:1fr;gap:12px}
-    canvas{width:100%;height:320px;background:var(--bg1);border-radius:12px;touch-action:none; display:block; transition:background-color .3s;}
+    canvas{width:100%;height:320px;background:var(--bg1);border-radius:12px;touch-action:none; display:block; transition: background-color .3s;}
 
     #dbMeterContainer{position:relative;background:rgba(255,255,255,.1);border-radius:999px;overflow:hidden}
     #dbMeterCanvas{height:20px;background:transparent;border-radius:999px}
@@ -198,7 +204,16 @@
                 <option value="16384">16384</option>
               </select>
             </label>
-            <button class="ghost icon-btn" id="fsFFT" title="Fullscreen">⛶</button>
+            <!-- fullscreen button with stable SVG -->
+            <button class="ghost icon-btn" id="fsFFT" title="Fullscreen" aria-label="Fullscreen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9V5a2 2 0 0 1 2-2h4"/>
+                <path d="M21 9V5a2 2 0 0 0-2-2h-4"/>
+                <path d="M3 15v4a2 2 0 0 0 2 2h4"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2h-4"/>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="plot">
@@ -233,7 +248,15 @@
               </select>
             </label>
             <span class="hint" id="octRangeText">0–255</span>
-            <button class="ghost icon-btn" id="fsOct" title="Fullscreen">⛶</button>
+            <button class="ghost icon-btn" id="fsOct" title="Fullscreen" aria-label="Fullscreen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9V5a2 2 0 0 1 2-2h4"/>
+                <path d="M21 9V5a2 2 0 0 0-2-2h-4"/>
+                <path d="M3 15v4a2 2 0 0 0 2 2h4"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2h-4"/>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="plot">
@@ -262,7 +285,15 @@
               </select>
             </label>
             <span class="hint" id="heatmapRangeText">-50 dBFS</span>
-            <button class="ghost icon-btn" id="fsHeat" title="Fullscreen">⛶</button>
+            <button class="ghost icon-btn" id="fsHeat" title="Fullscreen" aria-label="Fullscreen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9V5a2 2 0 0 1 2-2h4"/>
+                <path d="M21 9V5a2 2 0 0 0-2-2h-4"/>
+                <path d="M3 15v4a2 2 0 0 0 2 2h4"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2h-4"/>
+              </svg>
+            </button>
           </div>
         </div>
         <div class="plot">
@@ -341,7 +372,7 @@
         document.documentElement.dataset.theme='studio-blue';
         this.updateColors();
 
-        // === NEW: remember the floating dock home & element ===
+        // Floating dock (follow fullscreen)
         this.dock = document.querySelector('.float-dock');
         this.dockHome = this.dock ? this.dock.parentElement : null;
 
@@ -466,7 +497,7 @@
           this.updateHeatmapRangeText();
         });
 
-        // fullscreen binds
+        // fullscreen binds (SVG icon stays constant)
         this.setupFsToggle(this.dom.fsFFT,this.dom.fftCard);
         this.setupFsToggle(this.dom.fsOct,this.dom.octCard);
         this.setupFsToggle(this.dom.fsHeat,this.dom.heatmapCard);
@@ -480,16 +511,15 @@
 
         window.addEventListener('resize',()=>this.handleResize());
 
-        // === NEW: handle Safari's prefixed fullscreen event as well ===
         document.addEventListener('webkitfullscreenchange',()=>this.onFullscreenChange());
         document.addEventListener('fullscreenchange',()=>this.onFullscreenChange());
       }
 
-      // === NEW: move dock into fullscreen card (desktop/iPad), restore when exit ===
+      // Dock follow fullscreen (desktop/iPad)
       mountDock(target){
         if(!this.dock || !target) return;
         if(this.dock.parentElement !== target){
-          target.appendChild(this.dock); // fixed-position → pinned to FS viewport
+          target.appendChild(this.dock);
         }
       }
       restoreDock(){
@@ -509,7 +539,6 @@
       }
 
       syncFloating(){
-        // reflect header states -> floating buttons
         this.dom.fabStart.disabled = this.dom.btnStart.disabled;
         this.dom.fabStop .disabled = this.dom.btnStop.disabled;
         this.dom.fabHold.setAttribute('aria-pressed', this.state.holdEnabled);
@@ -519,10 +548,10 @@
       setupFsToggle(btn,card){
         if(!btn||!card) return;
         const isActive=()=>document.fullscreenElement===card||document.webkitFullscreenElement===card||card.classList.contains('is-fullscreen');
-        const updateIcon=()=>{btn.textContent=isActive()?'🗗':'⛶';};
+
+        const showActive=(active)=>{ btn.setAttribute('data-active', active?'1':'0'); };
 
         const enter=async()=>{
-          // try native FS first
           if(card.requestFullscreen){
             try{ await card.requestFullscreen({navigationUI:'hide'}); }
             catch{ card.classList.add('is-fullscreen'); this.mountDock(card); }
@@ -530,10 +559,9 @@
             try{ card.webkitRequestFullscreen(); }
             catch{ card.classList.add('is-fullscreen'); this.mountDock(card); }
           }else{
-            // fallback for mobile (already OK); still mount for consistency
             card.classList.add('is-fullscreen'); this.mountDock(card);
           }
-          this.handleResize(); updateIcon();
+          this.handleResize(); showActive(true);
         };
 
         const exit=async()=>{
@@ -543,11 +571,11 @@
           }else{
             card.classList.remove('is-fullscreen'); this.restoreDock();
           }
-          this.handleResize(); updateIcon();
+          this.handleResize(); showActive(false);
         };
 
         btn.addEventListener('click',()=>{isActive()?exit():enter();});
-        updateIcon();
+        showActive(isActive());
       }
 
       setupCanvases(){
