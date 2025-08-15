@@ -320,62 +320,24 @@
       html, body { overflow-x:hidden; }
     }
     
-/* PWA overflow guard overrides */
-.card.is-fullscreen{
-  position:fixed;
-  left:env(safe-area-inset-left);
-  right:env(safe-area-inset-right);
-  top:env(safe-area-inset-top);
-  bottom:env(safe-area-inset-bottom);
-  z-index:9999;
-  margin:0;
-  border-radius:0;
-  overflow:clip;
-  padding-left:calc(12px + env(safe-area-inset-left));
-  padding-right:calc(12px + env(safe-area-inset-right));
-  padding-top:calc(12px + env(safe-area-inset-top));
-  padding-bottom:calc(12px + env(safe-area-inset-bottom));
-}
-:fullscreen .plot, .card.is-fullscreen .plot{ height: calc(100dvh - 120px) !important; }
-
-/* PWA standalone overflow guard (round 2) */
+/* Global overflow guard */
 @media all and (display-mode: standalone){
   html, body{ overflow-x:hidden; }
-  .toolbar{ flex-wrap:wrap; }
-  .badges{ flex-wrap:wrap; }
   .container, .wrapper, .meters, .card{ max-width:100%; overflow-x:clip; }
 }
-html.standalone .toolbar{ flex-wrap:wrap; }
 html.standalone .container, html.standalone .wrapper, html.standalone .meters, html.standalone .card{ max-width:100%; overflow-x:clip; }
 
-/* Phone landscape fullscreen tuning */
+/* Phone-only (landscape) UI compaction + hide fullscreen button */
+html.phone-landscape #fsFFT{ display:none !important; }
 @media (orientation: landscape) and (max-height: 450px){
-  html.standalone .card.is-fullscreen,
-  @supports (display-mode: standalone){
-    .card.is-fullscreen{
-      /* keep safe-area positioning from v2 */
-      border-width:1px;
-    }
-  }
-  html.standalone .card.is-fullscreen,
-  .card.is-fullscreen{
-    /* thinner chrome */
-    --card-padding: 6px;
-    --card-border: 1px;
-  }
-  .card.is-fullscreen{ border: var(--card-border) solid rgba(255,255,255,.1); }
-  .card.is-fullscreen > *{ margin: 0; }
-  /* top toolbar compact & stay visible */
-  .card.is-fullscreen .row:first-child{ padding: 0 6px; }
-  .card.is-fullscreen .toolbar{ gap:8px; flex-wrap:wrap; }
-  .card.is-fullscreen .toolbar input[type="range"]{ width:120px; }
-  .card.is-fullscreen .icon-btn{ width:32px; height:30px; }
-  .card.is-fullscreen .badge{ transform: scale(.95); }
-  /* left side buttons compact */
-  .card.is-fullscreen .side-btn{ width:36px; height:36px; }
-  /* maximize plot height */
-  .card.is-fullscreen .plot,
-  .card.is-fullscreen canvas{ height: calc(100dvh - 100px) !important; }
+  html.phone-landscape .toolbar{ flex-wrap:wrap; }
+  html.phone-landscape .badges{ flex-wrap:wrap; }
+  html.phone-landscape #fftCard{ border-width:1px; }
+  html.phone-landscape #fftCard .icon-btn{ width:32px; height:30px; }
+  html.phone-landscape #fftCard .toolbar input[type="range"]{ width:120px; }
+  /* maximize plot area */
+  html.phone-landscape #fftCard .plot,
+  html.phone-landscape #fftCard canvas{ height: calc(100dvh - 96px) !important; }
 }
 </style>
 </head>
@@ -626,6 +588,64 @@ html.standalone .container, html.standalone .wrapper, html.standalone .meters, h
   </div>
 
   
+
+<script>
+(function(){
+  function detectDevice(){
+    var ua = navigator.userAgent || "";
+    var isIPad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isIPhone = /iPhone/.test(ua);
+    var isAndroidPhone = /Android/.test(ua) && /Mobile/.test(ua);
+    var isPhone = (isIPhone || isAndroidPhone) && !isIPad;
+    return {isPhone:isPhone, isIPad:isIPad};
+  }
+  function isLandscape(){
+    try{
+      return (matchMedia("(orientation: landscape)").matches) || (innerWidth > innerHeight);
+    }catch(e){ return innerWidth > innerHeight; }
+  }
+  function applyPhoneLayout(){
+    var dev = detectDevice();
+    var fftCard = document.getElementById('fftCard');
+    var fsBtn = document.getElementById('fsFFT');
+    if(!fftCard) return;
+    if(dev.isPhone && isLandscape()){
+      document.documentElement.classList.add('phone-landscape');
+      if(fsBtn){ fsBtn.setAttribute('hidden',''); }
+      // auto fullscreen style for phone landscape (no button)
+      fftCard.classList.add('is-fullscreen', 'phone-auto');
+    }else{
+      document.documentElement.classList.remove('phone-landscape');
+      if(fsBtn){ fsBtn.removeAttribute('hidden'); }
+      // only remove the auto-applied flag; keep manual fullscreen if any
+      fftCard.classList.remove('phone-auto');
+      if(!fftCard.classList.contains('manual-fullscreen')){
+        fftCard.classList.remove('is-fullscreen');
+      }
+    }
+  }
+  // If your app toggles manual fullscreen via button, mark it once
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.id === 'fsFFT'){
+      var fftCard = document.getElementById('fftCard');
+      if(!fftCard) return;
+      fftCard.classList.toggle('is-fullscreen');
+      if(fftCard.classList.contains('is-fullscreen')){
+        fftCard.classList.add('manual-fullscreen');
+      }else{
+        fftCard.classList.remove('manual-fullscreen');
+      }
+    }
+  }, true);
+
+  window.addEventListener('resize', applyPhoneLayout);
+  window.addEventListener('orientationchange', function(){ setTimeout(applyPhoneLayout, 50); });
+  window.visualViewport && window.visualViewport.addEventListener('resize', applyPhoneLayout);
+  document.addEventListener('DOMContentLoaded', applyPhoneLayout);
+  applyPhoneLayout();
+})();
+</script>
+
 <script>
 (function(){
   try{
