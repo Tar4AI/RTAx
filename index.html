@@ -409,13 +409,7 @@ html.standalone .container, html.standalone .wrapper, html.standalone .meters, h
       </div>
 
       <div class="row" style="justify-content:space-between;">
-        <div class="row">
-          <label>พยายามปิด DSP ของระบบ:</label>
-          <div class="row">
-            <label>echoCancellation <input id="ec" type="checkbox" checked></label>
-            <label>noiseSuppression <input id="ns" type="checkbox" checked></label>
-            <label>autoGainControl <input id="agc" type="checkbox" checked></label>
-          </div>
+        
         </div>
         <label>Theme
           <select id="themeSelector">
@@ -608,7 +602,20 @@ html.standalone .container, html.standalone .wrapper, html.standalone .meters, h
         </div>
       </div>
 
-      <!-- Disclaimer -->
+      
+      <!-- System DSP (moved under Calibration) -->
+      <div class="card" id="systemDSPCard">
+        <div class="row" style="align-items:center; flex-wrap:wrap; gap:8px">
+<div class="row">
+          <label>พยายามปิด DSP ของระบบ:</label>
+          <div class="row">
+            <label>echoCancellation <input id="ec" type="checkbox" checked></label>
+            <label>noiseSuppression <input id="ns" type="checkbox" checked></label>
+            <label>autoGainControl <input id="agc" type="checkbox" checked></label>
+          </div>
+        </div>
+      </div>
+<!-- Disclaimer -->
       <div class="card">
         <p class="hint" style="margin:0; text-align: center;"><b>ข้อจำกัด:</b> ไมค์มือถือมี DSP/AGC และการตอบสนองความถี่ไม่แฟลต ใช้ดูแนว EQ ได้แต่ไม่ใช่วัดระดับ SPL มืออาชีพ</p>
       </div>
