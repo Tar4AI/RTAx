@@ -213,7 +213,21 @@
     input[type="range"], input[type="checkbox"]{accent-color:var(--accent-color)}
 
     /* fullscreen fallback */
-    .card.is-fullscreen{position:fixed;inset:0;z-index:9999;margin:0;border-radius:0;width:calc(100dvw - 1px);height:100dvh}
+    .card.is-fullscreen{
+  position:fixed;
+  left:env(safe-area-inset-left);
+  right:env(safe-area-inset-right);
+  top:env(safe-area-inset-top);
+  bottom:env(safe-area-inset-bottom);
+  z-index:9999;
+  margin:0;
+  border-radius:0;
+  overflow:clip;
+  padding-left:calc(12px + env(safe-area-inset-left));
+  padding-right:calc(12px + env(safe-area-inset-right));
+  padding-top:calc(12px + env(safe-area-inset-top));
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
     .card.is-fullscreen .plot{height:calc(100dvh - 120px)}
     :fullscreen .plot{height:calc(100dvh - 120px)}
     :fullscreen canvas, .card.is-fullscreen canvas{height:100%!important}
@@ -307,8 +321,33 @@
     }
     
 /* PWA overflow guard overrides */
-.card.is-fullscreen{ width: calc(100dvw - 1px) !important; height: 100dvh !important; }
+.card.is-fullscreen{
+  position:fixed;
+  left:env(safe-area-inset-left);
+  right:env(safe-area-inset-right);
+  top:env(safe-area-inset-top);
+  bottom:env(safe-area-inset-bottom);
+  z-index:9999;
+  margin:0;
+  border-radius:0;
+  overflow:clip;
+  padding-left:calc(12px + env(safe-area-inset-left));
+  padding-right:calc(12px + env(safe-area-inset-right));
+  padding-top:calc(12px + env(safe-area-inset-top));
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
 :fullscreen .plot, .card.is-fullscreen .plot{ height: calc(100dvh - 120px) !important; }
+
+/* PWA standalone overflow guard (round 2) */
+@media all and (display-mode: standalone){
+  html, body{ overflow-x:hidden; }
+  .toolbar{ flex-wrap:wrap; }
+  .badges{ flex-wrap:wrap; }
+  /* generic container clip */
+  .container, .wrapper, .meters, .card{ max-width:100%; overflow-x:clip; }
+}
+html.standalone .toolbar{ flex-wrap:wrap; }
+html.standalone .container, html.standalone .wrapper, html.standalone .meters, html.standalone .card{ max-width:100%; overflow-x:clip; }
 </style>
 </head>
 <body>
