@@ -343,11 +343,40 @@
   html, body{ overflow-x:hidden; }
   .toolbar{ flex-wrap:wrap; }
   .badges{ flex-wrap:wrap; }
-  /* generic container clip */
   .container, .wrapper, .meters, .card{ max-width:100%; overflow-x:clip; }
 }
 html.standalone .toolbar{ flex-wrap:wrap; }
 html.standalone .container, html.standalone .wrapper, html.standalone .meters, html.standalone .card{ max-width:100%; overflow-x:clip; }
+
+/* Phone landscape fullscreen tuning */
+@media (orientation: landscape) and (max-height: 450px){
+  html.standalone .card.is-fullscreen,
+  @supports (display-mode: standalone){
+    .card.is-fullscreen{
+      /* keep safe-area positioning from v2 */
+      border-width:1px;
+    }
+  }
+  html.standalone .card.is-fullscreen,
+  .card.is-fullscreen{
+    /* thinner chrome */
+    --card-padding: 6px;
+    --card-border: 1px;
+  }
+  .card.is-fullscreen{ border: var(--card-border) solid rgba(255,255,255,.1); }
+  .card.is-fullscreen > *{ margin: 0; }
+  /* top toolbar compact & stay visible */
+  .card.is-fullscreen .row:first-child{ padding: 0 6px; }
+  .card.is-fullscreen .toolbar{ gap:8px; flex-wrap:wrap; }
+  .card.is-fullscreen .toolbar input[type="range"]{ width:120px; }
+  .card.is-fullscreen .icon-btn{ width:32px; height:30px; }
+  .card.is-fullscreen .badge{ transform: scale(.95); }
+  /* left side buttons compact */
+  .card.is-fullscreen .side-btn{ width:36px; height:36px; }
+  /* maximize plot height */
+  .card.is-fullscreen .plot,
+  .card.is-fullscreen canvas{ height: calc(100dvh - 100px) !important; }
+}
 </style>
 </head>
 <body>
@@ -598,7 +627,6 @@ html.standalone .container, html.standalone .wrapper, html.standalone .meters, h
 
   
 <script>
-// Add 'standalone' class on <html> for iOS/standalone PWAs
 (function(){
   try{
     var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) 
